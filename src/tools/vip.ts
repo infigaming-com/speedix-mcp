@@ -20,8 +20,8 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const currency = rest.currency || await client.getReportingCurrency();
+        const { operator_id, currency: currencyParam, ...rest } = params;
+        const currency = currencyParam || await client.getReportingCurrency();
         const body: Record<string, unknown> = {
           ...rest,
           currency,
