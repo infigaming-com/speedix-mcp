@@ -70,7 +70,7 @@ export class MeepoClient {
   async connect(): Promise<void> {
     if (this.config.email && this.config.password && this.config.origin) {
       const result = await this.auth.login();
-      if (result.require_2fa && !result.token) {
+      if (result.require2fa && !result.token) {
         console.error(
           "[speedix-mcp] Login requires 2FA. Use setup_2fa or complete_2fa_login tool."
         );
@@ -80,6 +80,60 @@ export class MeepoClient {
         "[speedix-mcp] Starting in unauthenticated mode. Use login or create_company to authenticate."
       );
     }
+  }
+
+  /**
+   * Upload a file to R2 via the filestore endpoint.
+   * @param filePath - Target path in R2 (e.g. "site/config.json")
+   * @param content - File content as string
+   * @param contentType - MIME type (e.g. "application/json")
+   * @param domain - Target subdomain
+   * @param fileName - File name (e.g. "config.json")
+   */
+  async uploadFile(
+    filePath: string,
+    content: string,
+    contentType: string,
+    domain: string,
+    fileName: string
+  ): Promise<unknown> {
+    const url = `${this.config.apiBaseUrl}/v1/backoffice/filestore/operator-static-files/upload`;
+    const token = await this.auth.getToken();
+
+    const formData = new FormData();
+    const blob = new Blob([content], { type: contentType });
+    formData.append("file", blob, fileName);
+    formData.append("contentType", contentType);
+    formData.append("filePath", filePath);
+    formData.append("domain", domain);
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    const origin = this.auth.origin;
+    if (origin) {
+      headers["Origin"] = origin;
+    }
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    if (!res.ok) {
+      let errorMsg: string;
+      try {
+        const err = (await res.json()) as ApiError;
+        errorMsg = err.message || err.reason || `HTTP ${res.status}`;
+      } catch {
+        errorMsg = await res.text();
+      }
+      throw new Error(`Upload error (${res.status}): ${errorMsg}`);
+    }
+
+    return await res.json();
   }
 
   get isConnected(): boolean {

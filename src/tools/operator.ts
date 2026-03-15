@@ -2,35 +2,282 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { MeepoClient } from "../client/api.js";
 
+// Available website templates
+const TEMPLATES = [
+  { label: "ALL-IN-ONE", value: "mobile-desktop" },
+  { label: "ALL-IN-ONE (Mobile Only)", value: "mobile-only" },
+  { label: "Sportsbook", value: "sportsbook", disabled: true },
+  { label: "Web3", value: "web3", disabled: true },
+  { label: "Poker", value: "poker", disabled: true },
+] as const;
+
+// Available color schemes
+const COLORS = [
+  { value: "light", primary: "#6149F7", secondary: "#ffffff" },
+  { value: "black", primary: "#6149F7", secondary: "#1C252E" },
+  { value: "red-black", primary: "#ed1e49", secondary: "#1C252E" },
+  { value: "blue-black", primary: "#00b3f6", secondary: "#1C252E" },
+  { value: "green-black", primary: "#34EC7D", secondary: "#242626" },
+] as const;
+
+const TEMPLATE_VALUES = ["mobile-desktop", "mobile-only"] as const;
+const COLOR_VALUES = ["light", "black", "red-black", "blue-black", "green-black"] as const;
+
+/**
+ * Generate site config.json content for an operator.
+ */
+function generateSiteConfig(params: {
+  color: string;
+  operatorName: string;
+  supportedCurrencies?: string[];
+  supportedLanguages?: string[];
+}): string {
+  const config = {
+    default_theme: params.color,
+    brand_name: params.operatorName,
+    support_email: "",
+    loading_type: "loading1",
+    license_enable: false,
+    license_image: "",
+    license_url: "",
+    country_config: [
+      {
+        country: "global",
+        defaultCurrency:
+          params.supportedCurrencies?.[0] || "USDT",
+        defaultLanguage:
+          params.supportedLanguages?.[0] || "en",
+        supportCurrency: params.supportedCurrencies?.length
+          ? params.supportedCurrencies
+          : ["USDT"],
+        supportLanguage: params.supportedLanguages?.length
+          ? params.supportedLanguages
+          : ["en"],
+        siteTitle: params.operatorName,
+        websiteIntroduction: "",
+        licenseDescription: "",
+      },
+    ],
+  };
+  return JSON.stringify(config, null, 2);
+}
+
+/**
+ * Generate manifest.json content for an operator (PWA).
+ */
+function generateManifest(operatorName: string): string {
+  const manifest = {
+    name: operatorName || " ",
+    short_name: operatorName || " ",
+    theme_color: "#ffffff",
+    background_color: "#ffffff",
+    display: "standalone",
+    start_url: "/",
+    icons: [
+      {
+        src: "/site/pwa-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: "/site/pwa-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
+    ],
+  };
+  return JSON.stringify(manifest, null, 2);
+}
+
+/**
+ * Upload config.json and manifest.json to R2 for an operator.
+ */
+async function uploadSiteConfig(
+  client: MeepoClient,
+  subdomain: string,
+  configJson: string,
+  manifestJson: string
+): Promise<{ configUploaded: boolean; manifestUploaded: boolean; errors: string[] }> {
+  const errors: string[] = [];
+  let configUploaded = false;
+  let manifestUploaded = false;
+
+  try {
+    await client.uploadFile(
+      "site/config.json",
+      configJson,
+      "application/json",
+      subdomain,
+      "config.json"
+    );
+    configUploaded = true;
+  } catch (e) {
+    errors.push(`config.json upload failed: ${(e as Error).message}`);
+  }
+
+  try {
+    await client.uploadFile(
+      "manifest.json",
+      manifestJson,
+      "application/manifest+json",
+      subdomain,
+      "manifest.json"
+    );
+    manifestUploaded = true;
+  } catch (e) {
+    errors.push(`manifest.json upload failed: ${(e as Error).message}`);
+  }
+
+  return { configUploaded, manifestUploaded, errors };
+}
+
 export function registerOperatorTools(
   server: McpServer,
   client: MeepoClient
 ) {
-  // Create a company operator
+  // List available templates and color schemes
   server.tool(
-    "create_company",
-    "Create a new company operator with admin account. No authentication required (self-registration). Returns JWT token and backoffice subdomain. Automatically logs in after creation.",
+    "list_operator_templates",
+    "List available website templates and color schemes for operator creation. " +
+      "Returns template options (with availability status) and color schemes (with primary/secondary hex colors).",
+    {},
+    async () => {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                templates: TEMPLATES,
+                colors: COLORS,
+                notes: {
+                  templates:
+                    "Only 'mobile-desktop' and 'mobile-only' are currently available. Others are coming soon.",
+                  colors:
+                    "primary = accent color, secondary = background color.",
+                },
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
+
+  // Upload/update operator site config
+  server.tool(
+    "upload_operator_config",
+    "Generate and upload site config.json and manifest.json to R2 for an existing operator. " +
+      "Use this to update an operator's branding/theme after creation, or to re-upload if the initial upload failed.",
     {
-      company_name: z.string().describe("Company name"),
-      email: z.string().email().describe("Admin email address"),
-      password: z.string().describe("Admin password"),
-      mobile: z.string().optional().describe("Mobile phone number"),
-      operator_key: z.string().optional().describe("Unique operator key identifier"),
-      contact: z.string().optional().describe("Contact person name"),
-      contact_methods: z.string().optional().describe("Contact methods (JSON string)"),
-      affiliate: z.string().optional().describe("Affiliate info"),
-      verification_code: z.string().optional().describe("Email verification code"),
+      subdomain: z
+        .string()
+        .describe(
+          "Operator's frontend subdomain (e.g. 'op-key.meepo.lol')"
+        ),
+      operator_name: z.string().describe("Operator display name (used as brand_name and PWA name)"),
+      color: z
+        .enum(COLOR_VALUES)
+        .describe("Color scheme: light, black, red-black, blue-black, or green-black"),
+      supported_currencies: z
+        .array(z.string())
+        .optional()
+        .describe("Supported currencies (e.g. ['USD', 'USDT'])"),
+      supported_languages: z
+        .array(z.string())
+        .optional()
+        .describe("Supported languages (e.g. ['en', 'de'])"),
     },
     async (params) => {
       try {
+        const configJson = generateSiteConfig({
+          color: params.color,
+          operatorName: params.operator_name,
+          supportedCurrencies: params.supported_currencies,
+          supportedLanguages: params.supported_languages,
+        });
+        const manifestJson = generateManifest(params.operator_name);
+
+        const result = await uploadSiteConfig(
+          client,
+          params.subdomain,
+          configJson,
+          manifestJson
+        );
+
+        const lines = [];
+        if (result.configUploaded) lines.push("config.json uploaded successfully.");
+        if (result.manifestUploaded) lines.push("manifest.json uploaded successfully.");
+        if (result.errors.length > 0) {
+          lines.push("Errors:", ...result.errors);
+        }
+        lines.push("", "Generated config.json:", configJson);
+
+        return {
+          content: [{ type: "text" as const, text: lines.join("\n") }],
+          isError: result.errors.length > 0,
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Failed to upload operator config: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+  // Create a company operator
+  server.tool(
+    "create_company",
+    "Create a new company operator with admin account. No authentication required (self-registration). " +
+      "Step 1: Call without verification_code to send a verification email. " +
+      "Step 2: Call again with the verification_code from the email to complete registration. " +
+      "Returns JWT token and backoffice subdomain. Automatically logs in after creation.",
+    {
+      company_name: z.string().describe("Company name"),
+      operator_key: z.string().describe("Unique operator key identifier (e.g. 'my-company')"),
+      email: z.string().email().describe("Admin email address"),
+      password: z.string().describe("Admin password"),
+      mobile: z.string().optional().describe("Mobile phone number"),
+      contact: z.string().optional().describe("Contact person name"),
+      contact_methods: z.string().optional().describe("Contact methods (JSON string)"),
+      affiliate: z.string().optional().describe("Affiliate info"),
+      verification_code: z.string().optional().describe("Email verification code (omit to send code first)"),
+    },
+    async (params) => {
+      try {
+        // Step 1: If no verification code provided, send one first
+        if (!params.verification_code) {
+          await client.request(
+            "accounts/register/verification/send",
+            { email: params.email },
+            true // skipAuth
+          );
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Verification code sent to ${params.email}. Please check your inbox and call create_company again with all the same parameters plus the verification_code.`,
+              },
+            ],
+          };
+        }
+
+        // Step 2: Register with verification code
         const result = await client.request(
           "company/register",
           {
             company_name: params.company_name,
+            operator_key: params.operator_key,
             email: params.email,
             password: params.password,
             mobile: params.mobile,
-            operator_key: params.operator_key,
             contact: params.contact,
             contact_methods: params.contact_methods,
             affiliate: params.affiliate,
@@ -91,13 +338,17 @@ export function registerOperatorTools(
   // Create an operator under a company
   server.tool(
     "create_operator",
-    "Create a new operator under the current company. Requires email verification.",
+    "Create a new operator under the current company. " +
+      "Step 1: Call without verification_code to send a verification email. " +
+      "Step 2: Call again with the verification_code from the email to complete creation. " +
+      "After creation, automatically uploads site config.json and manifest.json to R2. " +
+      "Use list_operator_templates to see available templates and color schemes.",
     {
       operator_name: z.string().describe("Operator display name"),
       operator_key: z.string().describe("Unique operator key"),
       mode: z
-        .enum(["individual", "cooperation"])
-        .describe("Operator mode: 'individual' or 'cooperation'"),
+        .enum(["individual", "co-operation"])
+        .describe("Operator mode: 'individual' or 'co-operation'"),
       reporting_currency: z.string().describe("Reporting currency (e.g. USD)"),
       backoffice_timezone: z
         .string()
@@ -106,7 +357,7 @@ export function registerOperatorTools(
         .string()
         .email()
         .describe("Admin email for the operator"),
-      verification_code: z.string().optional().describe("Email verification code"),
+      verification_code: z.string().optional().describe("Email verification code (omit to send code first)"),
       supported_languages: z
         .array(z.string())
         .optional()
@@ -116,17 +367,88 @@ export function registerOperatorTools(
         .optional()
         .describe("Supported currencies (e.g. ['USD', 'EUR', 'BTC'])"),
       template_name: z
-        .string()
-        .optional()
-        .describe("Branding template name"),
+        .enum(TEMPLATE_VALUES)
+        .default("mobile-desktop")
+        .describe("Website template: 'mobile-desktop' (ALL-IN-ONE) or 'mobile-only' (Mobile Only)"),
+      color: z
+        .enum(COLOR_VALUES)
+        .default("black")
+        .describe("Color scheme: light, black, red-black, blue-black, or green-black"),
     },
     async (params) => {
       try {
-        const result = await client.request("operator/create", params);
+        // Step 1: If no verification code provided, send one first
+        if (!params.verification_code) {
+          await client.request(
+            "accounts/register/verification/send",
+            { email: params.operator_admin_email }
+          );
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Verification code sent to ${params.operator_admin_email}. Please check your inbox and call create_operator again with all the same parameters plus the verification_code.`,
+              },
+            ],
+          };
+        }
+
+        // Step 2: Create operator with verification code
+        const { color, ...createParams } = params;
+        const result = await client.request("operator/create", createParams);
+
+        const data = result as {
+          subdomain?: string;
+          backofficeSubdomain?: string;
+          operatorAdminEmail?: string;
+          password?: string;
+        };
+
+        const lines = [
+          "Operator created successfully!",
+          "",
+          JSON.stringify(result, null, 2),
+        ];
+
+        // Auto-upload site config if subdomain is available
+        if (data.subdomain) {
+          const configJson = generateSiteConfig({
+            color,
+            operatorName: params.operator_name,
+            supportedCurrencies: params.supported_currencies,
+            supportedLanguages: params.supported_languages,
+          });
+          const manifestJson = generateManifest(params.operator_name);
+
+          const uploadResult = await uploadSiteConfig(
+            client,
+            data.subdomain,
+            configJson,
+            manifestJson
+          );
+
+          lines.push("");
+          if (uploadResult.configUploaded) {
+            lines.push("Site config.json uploaded to R2.");
+          }
+          if (uploadResult.manifestUploaded) {
+            lines.push("PWA manifest.json uploaded to R2.");
+          }
+          if (uploadResult.errors.length > 0) {
+            lines.push(
+              "Upload warnings (you can retry with upload_operator_config):",
+              ...uploadResult.errors
+            );
+          }
+        } else {
+          lines.push(
+            "",
+            "Note: No subdomain returned. Use upload_operator_config to upload site config later."
+          );
+        }
+
         return {
-          content: [
-            { type: "text", text: JSON.stringify(result, null, 2) },
-          ],
+          content: [{ type: "text" as const, text: lines.join("\n") }],
         };
       } catch (e) {
         return {
@@ -208,7 +530,7 @@ export function registerOperatorTools(
   // List company operators
   server.tool(
     "list_company_operators",
-    "List all company-level operators.",
+    "List company-tier operators (the parent companies themselves, not their child sites). To see player-facing sites under a company, use list_bottom_operators instead.",
     {
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
@@ -238,7 +560,7 @@ export function registerOperatorTools(
   // List bottom operators
   server.tool(
     "list_bottom_operators",
-    "List all bottom-level (player-facing) operators.",
+    "List all site-level operators (player-facing sites) under the current company. Use this to see how many sites/operators the company owns.",
     {
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
