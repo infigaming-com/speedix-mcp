@@ -175,7 +175,7 @@ export function registerOperatorTools(
       subdomain: z
         .string()
         .describe(
-          "Operator's frontend subdomain (e.g. 'op-key.meepo.lol')"
+          "Operator's frontend subdomain (e.g. 'my-site.example.com')"
         ),
       operator_name: z.string().describe("Operator display name (used as brand_name and PWA name)"),
       color: z
