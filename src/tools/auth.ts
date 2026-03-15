@@ -42,8 +42,8 @@ export function registerAuthTools(server: McpServer, client: MeepoClient) {
           };
         }
 
-        if (result.require_2fa) {
-          const msg = result.twofa_bound
+        if (result.require2fa) {
+          const msg = result.twofaBound
             ? "2FA verification required. Use complete_2fa_login tool with your authenticator app code."
             : "2FA setup required (first login). Use setup_2fa tool to generate and bind 2FA.";
           return {
@@ -87,7 +87,7 @@ export function registerAuthTools(server: McpServer, client: MeepoClient) {
                 "2FA Setup Generated:",
                 "",
                 `Secret: ${result.secret}`,
-                `QR Code URL: ${result.qr_code_url}`,
+                `QR Code URL: ${result.qrCodeUrl}`,
                 `Issuer: ${result.issuer}`,
                 "",
                 "Steps:",

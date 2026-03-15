@@ -13,9 +13,9 @@ export interface Pending2faState {
 
 interface LoginResponse {
   token?: string;
-  require_2fa?: boolean;
-  twofa_bound?: boolean;
-  temp_token?: string;
+  require2fa?: boolean;
+  twofaBound?: boolean;
+  tempToken?: string;
 }
 
 export class AuthManager {
@@ -118,11 +118,11 @@ export class AuthManager {
       return data;
     }
 
-    if (data.require_2fa && data.temp_token) {
+    if (data.require2fa && data.tempToken) {
       // 2FA required but not completed
       this.pending2fa = {
-        tempToken: data.temp_token,
-        twofaBound: data.twofa_bound ?? false,
+        tempToken: data.tempToken,
+        twofaBound: data.twofaBound ?? false,
       };
       this.state = null;
       return data;
@@ -151,11 +151,15 @@ export class AuthManager {
    * Set auth state directly from a JWT token (e.g. from create_company response).
    */
   setTokenFromJwt(token: string): void {
+    // Strip "Bearer " prefix if the API returns it
+    const cleanToken = token.startsWith("Bearer ")
+      ? token.slice(7)
+      : token;
     const payload = JSON.parse(
-      Buffer.from(token.split(".")[1], "base64").toString()
+      Buffer.from(cleanToken.split(".")[1], "base64").toString()
     );
     const expiresAt = (payload.exp as number) * 1000;
-    this.state = { token, expiresAt };
+    this.state = { token: cleanToken, expiresAt };
     this.pending2fa = null;
   }
 
@@ -210,7 +214,7 @@ export class AuthManager {
    */
   async generate2fa(): Promise<{
     secret: string;
-    qr_code_url: string;
+    qrCodeUrl: string;
     issuer: string;
   }> {
     if (!this.pending2fa) {
@@ -239,7 +243,7 @@ export class AuthManager {
 
     return (await res.json()) as {
       secret: string;
-      qr_code_url: string;
+      qrCodeUrl: string;
       issuer: string;
     };
   }
