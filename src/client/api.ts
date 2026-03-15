@@ -10,6 +10,7 @@ export interface ApiError {
 export class MeepoClient {
   private config: Config;
   auth: AuthManager;
+  private _reportingCurrency: string | null = null;
 
   constructor(config: Config) {
     this.config = config;
@@ -164,6 +165,24 @@ export class MeepoClient {
       retailer_operator_id: current.retailerOperatorId,
       system_operator_id: current.systemOperatorId,
     };
+  }
+
+  /**
+   * Get the current operator's reporting currency.
+   * Fetches from account info on first call and caches.
+   */
+  async getReportingCurrency(): Promise<string> {
+    if (this._reportingCurrency) return this._reportingCurrency;
+
+    try {
+      const info = await this.request<{
+        reportingCurrency?: { currency?: string };
+      }>("account/info/get");
+      this._reportingCurrency = info.reportingCurrency?.currency || "USD";
+    } catch {
+      this._reportingCurrency = "USD";
+    }
+    return this._reportingCurrency;
   }
 
   get isConnected(): boolean {

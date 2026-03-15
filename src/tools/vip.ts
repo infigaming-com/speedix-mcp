@@ -15,14 +15,16 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
     "get_vip_setting",
     "Get VIP system settings for the operator, including level config templates and reward settings. Returns both default (inherited from parent) and custom (operator-specific) settings with their templates.",
     {
-      currency: z.string().optional().describe("Currency code for currency-specific VIP settings"),
+      currency: z.string().optional().describe("Currency code for currency-specific VIP settings. Defaults to operator's reporting currency if not specified."),
       operator_id: operatorIdParam,
     },
     async (params) => {
       try {
         const { operator_id, ...rest } = params;
+        const currency = rest.currency || await client.getReportingCurrency();
         const body: Record<string, unknown> = {
           ...rest,
+          currency,
           target_operator_context: client.buildTargetOperatorContext(operator_id),
         };
         const result = await client.request("vip/setting/get", body);
