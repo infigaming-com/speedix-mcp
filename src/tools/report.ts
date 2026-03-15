@@ -2,19 +2,35 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { MeepoClient } from "../client/api.js";
 
+/**
+ * Build operator_context_filters from an operator_id.
+ * Used by company/retailer accounts to query sub-operator data.
+ */
+function buildOperatorContextFilters(operatorId: number) {
+  return {
+    operator_contexts: [{ operator_id: operatorId }],
+  };
+}
+
 export function registerReportTools(server: McpServer, client: MeepoClient) {
   // Get summary report
   server.tool(
     "get_report_summary",
-    "Get aggregated summary report (users, revenue, GGR, NGR, deposits, withdrawals).",
+    "Get aggregated summary report (users, revenue, GGR, NGR, deposits, withdrawals). Use operator_id to query a specific sub-operator's data.",
     {
       start_time: z.number().describe("Start timestamp (ms)"),
       end_time: z.number().describe("End timestamp (ms)"),
       currency: z.string().optional().describe("Filter by currency"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
-        const result = await client.request("report/summary/get", params);
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
+        const result = await client.request("report/summary/get", body);
         return {
           content: [
             { type: "text", text: JSON.stringify(result, null, 2) },
@@ -44,10 +60,16 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       currency: z.string().optional().describe("Filter by currency"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
-        const result = await client.request("report/summary/list", params);
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
+        const result = await client.request("report/summary/list", body);
         return {
           content: [
             { type: "text", text: JSON.stringify(result, null, 2) },
@@ -76,10 +98,16 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       end_time: z.number().describe("End timestamp (ms)"),
       currency: z.string().optional().describe("Filter by currency"),
       provider_id: z.string().optional().describe("Filter by provider"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
-        const result = await client.request("report/game-data/get", params);
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
+        const result = await client.request("report/game-data/get", body);
         return {
           content: [
             { type: "text", text: JSON.stringify(result, null, 2) },
@@ -110,10 +138,16 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       provider_id: z.string().optional().describe("Filter by provider"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
-        const result = await client.request("report/game-data/list", params);
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
+        const result = await client.request("report/game-data/list", body);
         return {
           content: [
             { type: "text", text: JSON.stringify(result, null, 2) },
@@ -141,12 +175,18 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       start_time: z.number().describe("Start timestamp (ms)"),
       end_time: z.number().describe("End timestamp (ms)"),
       currency: z.string().optional().describe("Filter by currency"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
         const result = await client.request(
           "report/deposit-summaries/get",
-          params
+          body
         );
         return {
           content: [
@@ -177,12 +217,18 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       currency: z.string().optional().describe("Filter by currency"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
         const result = await client.request(
           "report/deposit-details/list",
-          params
+          body
         );
         return {
           content: [
@@ -211,12 +257,18 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       start_time: z.number().describe("Start timestamp (ms)"),
       end_time: z.number().describe("End timestamp (ms)"),
       currency: z.string().optional().describe("Filter by currency"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
         const result = await client.request(
           "report/withdraw-summaries/get",
-          params
+          body
         );
         return {
           content: [
@@ -247,12 +299,18 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       currency: z.string().optional().describe("Filter by currency"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
         const result = await client.request(
           "report/withdraw-details/list",
-          params
+          body
         );
         return {
           content: [
@@ -282,12 +340,18 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       end_time: z.number().describe("End timestamp (ms)"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
         const result = await client.request(
           "report/register-retention/list",
-          params
+          body
         );
         return {
           content: [
@@ -318,12 +382,18 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       user_id: z.number().optional().describe("Filter by user ID"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
         const result = await client.request(
           "report/player-game-data/list",
-          params
+          body
         );
         return {
           content: [
@@ -350,12 +420,18 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     "Get detailed customer record report for a specific user.",
     {
       user_id: z.number().describe("User ID"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = { ...rest };
+        if (operator_id) {
+          body.operator_context_filters = buildOperatorContextFilters(operator_id);
+        }
         const result = await client.request(
           "report/customer-record/get",
-          params
+          body
         );
         return {
           content: [
@@ -388,13 +464,18 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       end_time: z.number().describe("End timestamp (ms)"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
-      const { report_type, ...rest } = params;
+      const { report_type, operator_id, ...rest } = params;
+      const body: Record<string, unknown> = { ...rest };
+      if (operator_id) {
+        body.operator_context_filters = buildOperatorContextFilters(operator_id);
+      }
       try {
         const result = await client.request(
           `report/referral/${report_type}/list`,
-          rest
+          body
         );
         return {
           content: [
@@ -427,13 +508,18 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       end_time: z.number().describe("End timestamp (ms)"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
+      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
-      const { report_type, ...rest } = params;
+      const { report_type, operator_id, ...rest } = params;
+      const body: Record<string, unknown> = { ...rest };
+      if (operator_id) {
+        body.operator_context_filters = buildOperatorContextFilters(operator_id);
+      }
       try {
         const result = await client.request(
           `report/affiliate/${report_type}/list`,
-          rest
+          body
         );
         return {
           content: [
