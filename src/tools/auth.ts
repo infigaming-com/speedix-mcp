@@ -86,17 +86,21 @@ export function registerAuthTools(server: McpServer, client: MeepoClient) {
               text: [
                 "2FA Setup Generated:",
                 "",
-                `Secret: ${result.secret}`,
                 `QR Code URL: ${result.qrCodeUrl}`,
                 `Issuer: ${result.issuer}`,
                 "",
                 "Steps:",
-                "1. Add this to your authenticator app (scan QR or enter secret manually)",
-                "2. Use bind_2fa tool with the 6-digit code from your app",
+                "1. Scan the QR code with your authenticator app",
+                "2. Use bind_2fa tool with the 6-digit code from your app and the secret below",
                 "",
-                `IMPORTANT: Save this secret as MEEPO_TOTP_SECRET env var for auto-login:`,
-                `MEEPO_TOTP_SECRET=${result.secret}`,
+                "IMPORTANT: The TOTP secret has been returned separately.",
+                "Save it as MEEPO_TOTP_SECRET in your MCP config env for auto-login.",
               ].join("\n"),
+            },
+            {
+              type: "text",
+              text: `[SENSITIVE] TOTP Secret: ${result.secret}`,
+              // Separated so AI clients can avoid logging this
             },
           ],
         };
@@ -136,8 +140,8 @@ export function registerAuthTools(server: McpServer, client: MeepoClient) {
               text: [
                 "2FA bound successfully. You are now fully authenticated.",
                 "",
-                "For future auto-login, add this to your MCP config env:",
-                `MEEPO_TOTP_SECRET=${params.secret}`,
+                "For future auto-login, set MEEPO_TOTP_SECRET in your MCP config env",
+                "to the secret you received from setup_2fa.",
               ].join("\n"),
             },
           ],

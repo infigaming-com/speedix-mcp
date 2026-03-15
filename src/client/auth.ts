@@ -155,10 +155,26 @@ export class AuthManager {
     const cleanToken = token.startsWith("Bearer ")
       ? token.slice(7)
       : token;
-    const payload = JSON.parse(
-      Buffer.from(cleanToken.split(".")[1], "base64").toString()
-    );
-    const expiresAt = (payload.exp as number) * 1000;
+
+    const parts = cleanToken.split(".");
+    if (parts.length !== 3) {
+      throw new Error("Invalid JWT token format");
+    }
+
+    let payload: { exp?: number };
+    try {
+      payload = JSON.parse(
+        Buffer.from(parts[1], "base64").toString()
+      );
+    } catch {
+      throw new Error("Failed to decode JWT payload");
+    }
+
+    if (typeof payload.exp !== "number") {
+      throw new Error("JWT payload missing exp claim");
+    }
+
+    const expiresAt = payload.exp * 1000;
     this.state = { token: cleanToken, expiresAt };
     this.pending2fa = null;
   }
