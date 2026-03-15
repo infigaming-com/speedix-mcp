@@ -1,5 +1,5 @@
 import type { Config } from "../config.js";
-import { AuthManager } from "./auth.js";
+import { AuthManager, type OperatorContext } from "./auth.js";
 
 export interface ApiError {
   code: number;
@@ -134,6 +134,36 @@ export class MeepoClient {
     }
 
     return await res.json();
+  }
+
+  /**
+   * Build target_operator_context for API requests.
+   * If targetOperatorId is provided, builds context for that operator.
+   * Otherwise uses current operator's context from JWT.
+   */
+  buildTargetOperatorContext(targetOperatorId?: number): Record<string, unknown> {
+    const current = this.auth.getOperatorContext();
+    if (!current) {
+      throw new Error("Not authenticated. Cannot build operator context.");
+    }
+
+    if (targetOperatorId && targetOperatorId !== current.operatorId) {
+      // Targeting a sub-operator: use target's operator_id with current's hierarchy
+      return {
+        operator_id: targetOperatorId,
+        company_operator_id: current.companyOperatorId || current.operatorId,
+        retailer_operator_id: current.retailerOperatorId,
+        system_operator_id: current.systemOperatorId,
+      };
+    }
+
+    // Targeting self
+    return {
+      operator_id: current.operatorId,
+      company_operator_id: current.companyOperatorId,
+      retailer_operator_id: current.retailerOperatorId,
+      system_operator_id: current.systemOperatorId,
+    };
   }
 
   get isConnected(): boolean {

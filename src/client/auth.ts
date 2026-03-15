@@ -1,9 +1,17 @@
 import type { Config } from "../config.js";
 import { generateTotpCode } from "./totp.js";
 
+export interface OperatorContext {
+  operatorId: number;
+  companyOperatorId: number;
+  retailerOperatorId: number;
+  systemOperatorId: number;
+}
+
 export interface AuthState {
   token: string;
   expiresAt: number;
+  operatorContext: OperatorContext;
 }
 
 export interface Pending2faState {
@@ -161,7 +169,15 @@ export class AuthManager {
       throw new Error("Invalid JWT token format");
     }
 
-    let payload: { exp?: number };
+    let payload: {
+      exp?: number;
+      userInfo?: {
+        operatorId?: number;
+        companyOperatorId?: number;
+        retailerOperatorId?: number;
+        systemOperatorId?: number;
+      };
+    };
     try {
       payload = JSON.parse(
         Buffer.from(parts[1], "base64").toString()
@@ -174,8 +190,16 @@ export class AuthManager {
       throw new Error("JWT payload missing exp claim");
     }
 
+    const userInfo = payload.userInfo;
+    const operatorContext: OperatorContext = {
+      operatorId: userInfo?.operatorId ?? 0,
+      companyOperatorId: userInfo?.companyOperatorId ?? 0,
+      retailerOperatorId: userInfo?.retailerOperatorId ?? 0,
+      systemOperatorId: userInfo?.systemOperatorId ?? 0,
+    };
+
     const expiresAt = payload.exp * 1000;
-    this.state = { token: cleanToken, expiresAt };
+    this.state = { token: cleanToken, expiresAt, operatorContext };
     this.pending2fa = null;
   }
 
@@ -301,6 +325,13 @@ export class AuthManager {
     this.setTokenFromJwt(data.token);
     this.dynamicTotpSecret = secret;
     return data.token;
+  }
+
+  /**
+   * Get current operator context from JWT.
+   */
+  getOperatorContext(): OperatorContext | null {
+    return this.state?.operatorContext ?? null;
   }
 
   isAuthenticated(): boolean {

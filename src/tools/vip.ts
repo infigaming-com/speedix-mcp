@@ -2,6 +2,13 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { MeepoClient } from "../client/api.js";
 
+const operatorIdParam = z
+  .number()
+  .optional()
+  .describe(
+    "Target operator ID. Omit to use the current operator. Provide a sub-operator ID when a parent account needs to manage a child operator's VIP config."
+  );
+
 export function registerVipTools(server: McpServer, client: MeepoClient) {
   // Get VIP setting
   server.tool(
@@ -9,10 +16,16 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
     "Get VIP system settings for the operator, including level config templates and reward settings. Returns both default (inherited from parent) and custom (operator-specific) settings with their templates.",
     {
       currency: z.string().optional().describe("Currency code for currency-specific VIP settings"),
+      operator_id: operatorIdParam,
     },
     async (params) => {
       try {
-        const result = await client.request("vip/setting/get", params);
+        const { operator_id, ...rest } = params;
+        const body: Record<string, unknown> = {
+          ...rest,
+          target_operator_context: client.buildTargetOperatorContext(operator_id),
+        };
+        const result = await client.request("vip/setting/get", body);
         return {
           content: [
             { type: "text", text: JSON.stringify(result, null, 2) },
@@ -40,12 +53,14 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
       setting: z
         .string()
         .describe("VIP setting config as JSON string"),
+      operator_id: operatorIdParam,
     },
     async (params) => {
       try {
         const settingObj = JSON.parse(params.setting);
         const result = await client.request("vip/setting/update", {
           setting: settingObj,
+          target_operator_context: client.buildTargetOperatorContext(params.operator_id),
         });
         return {
           content: [
@@ -75,13 +90,18 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
         .string()
         .describe("VIP level config template as JSON string"),
       setting_id: z.number().describe("VIP setting ID to attach template to"),
+      operator_id: operatorIdParam,
     },
     async (params) => {
       try {
         const templateObj = JSON.parse(params.template);
         const result = await client.request(
           "vip/level-config-template/create",
-          { template: templateObj, setting_id: params.setting_id }
+          {
+            template: templateObj,
+            setting_id: params.setting_id,
+            target_operator_context: client.buildTargetOperatorContext(params.operator_id),
+          }
         );
         return {
           content: [
@@ -110,13 +130,17 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
       template: z
         .string()
         .describe("Updated VIP level config template as JSON string (must include template ID)"),
+      operator_id: operatorIdParam,
     },
     async (params) => {
       try {
         const templateObj = JSON.parse(params.template);
         const result = await client.request(
           "vip/level-config-template/update",
-          { template: templateObj }
+          {
+            template: templateObj,
+            target_operator_context: client.buildTargetOperatorContext(params.operator_id),
+          }
         );
         return {
           content: [
@@ -143,12 +167,16 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
     "Delete a VIP level config template.",
     {
       template_id: z.number().describe("Template ID to delete"),
+      operator_id: operatorIdParam,
     },
     async (params) => {
       try {
         const result = await client.request(
           "vip/level-config-template/delete",
-          params
+          {
+            template_id: params.template_id,
+            target_operator_context: client.buildTargetOperatorContext(params.operator_id),
+          }
         );
         return {
           content: [
