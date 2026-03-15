@@ -236,6 +236,7 @@ export function registerOperatorTools(
   server.tool(
     "create_company",
     "Create a new company operator with admin account. No authentication required (self-registration). " +
+      "This is the starting point for new users who don't have an account yet. " +
       "Step 1: Call without verification_code to send a verification email. " +
       "Step 2: Call again with the verification_code from the email to complete registration. " +
       "Returns JWT token and backoffice subdomain. Automatically logs in after creation.",

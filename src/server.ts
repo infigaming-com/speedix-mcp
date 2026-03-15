@@ -20,10 +20,28 @@ export function createServer(config: Config): {
   server: McpServer;
   client: MeepoClient;
 } {
-  const server = new McpServer({
-    name: "speedix-mcp",
-    version: "0.2.0",
-  });
+  const server = new McpServer(
+    {
+      name: "speedix-mcp",
+      version: "0.2.0",
+    },
+    {
+      instructions: [
+        "Speedix MCP Server — Meepo gaming platform operator management.",
+        "",
+        "Getting started:",
+        "- If the user already has an account, they can configure MEEPO_EMAIL, MEEPO_PASSWORD, and MEEPO_ORIGIN env vars, or use the login tool.",
+        "- If the user does NOT have an account yet, they can start directly with the create_company tool to register a new company (no authentication required).",
+        "",
+        "Environment variables (all optional — defaults point to production):",
+        "- MEEPO_API_BASE_URL: API endpoint (default: https://apiport.xyz)",
+        "- MEEPO_ORIGIN: Backoffice origin (default: https://bo.speedixadm.com)",
+        "- MEEPO_EMAIL: Login email",
+        "- MEEPO_PASSWORD: Login password",
+        "- MEEPO_TOTP_SECRET: TOTP secret for auto 2FA login",
+      ].join("\n"),
+    }
+  );
 
   const client = new MeepoClient(config);
 
