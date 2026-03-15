@@ -6,7 +6,7 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
   // Get VIP setting
   server.tool(
     "get_vip_setting",
-    "Get VIP system settings for the operator, including level configs and reward templates.",
+    "Get VIP system settings for the operator, including level config templates and reward settings. Returns both default (inherited from parent) and custom (operator-specific) settings with their templates.",
     {
       currency: z.string().optional().describe("Currency code for currency-specific VIP settings"),
     },
@@ -58,65 +58,6 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
             {
               type: "text",
               text: `Failed to update VIP setting: ${(e as Error).message}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    }
-  );
-
-  // Get VIP config
-  server.tool(
-    "get_vip_config",
-    "Get the overall VIP configuration for the operator.",
-    {},
-    async () => {
-      try {
-        const result = await client.request("vip/config/get", {});
-        return {
-          content: [
-            { type: "text", text: JSON.stringify(result, null, 2) },
-          ],
-        };
-      } catch (e) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to get VIP config: ${(e as Error).message}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    }
-  );
-
-  // Get VIP level config template
-  server.tool(
-    "get_vip_level_template",
-    "Get a specific VIP level config template by ID.",
-    {
-      template_id: z.number().describe("Template ID"),
-    },
-    async (params) => {
-      try {
-        const result = await client.request(
-          "vip/level-config-template/get",
-          params
-        );
-        return {
-          content: [
-            { type: "text", text: JSON.stringify(result, null, 2) },
-          ],
-        };
-      } catch (e) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to get VIP level template: ${(e as Error).message}`,
             },
           ],
           isError: true,
