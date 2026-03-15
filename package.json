@@ -1,7 +1,7 @@
 {
   "name": "speedix-mcp",
   "version": "0.1.0",
-  "description": "MCP Server for Meepo gaming platform operator management",
+  "description": "Official MCP (Model Context Protocol) server for the Speedix iGaming platform — manage online casino, sportsbook, and gaming operations with AI assistants",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -13,12 +13,25 @@
     "start": "node dist/index.js",
     "lint": "tsc --noEmit"
   },
+  "homepage": "https://speedix.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/infigaming-com/speedix-mcp.git"
+  },
   "keywords": [
     "mcp",
-    "meepo",
-    "gaming",
+    "model-context-protocol",
+    "speedix",
+    "igaming",
+    "online-casino",
+    "sportsbook",
+    "gaming-platform",
     "operator-management",
-    "model-context-protocol"
+    "casino-management",
+    "white-label",
+    "ai-tools",
+    "claude",
+    "backoffice"
   ],
   "license": "MIT",
   "dependencies": {

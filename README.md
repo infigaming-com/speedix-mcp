@@ -1,6 +1,39 @@
 # Speedix MCP Server
 
-MCP (Model Context Protocol) server for the Meepo gaming platform. Enables AI assistants to manage operators, games, users, finances, and more through natural language.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
+[![Node](https://img.shields.io/badge/Node.js-%3E%3D18-green)](https://nodejs.org)
+
+Official [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for the [Speedix](https://speedix.io) iGaming platform. Enables AI assistants like Claude, ChatGPT, and other MCP-compatible clients to manage online casino and sportsbook operations through natural language.
+
+## What is Speedix?
+
+[Speedix](https://speedix.io) is a turnkey iGaming platform that provides everything you need to launch and operate an online casino, sportsbook, or gaming site. Key features include:
+
+- **Turnkey Solution** — Launch a fully branded online casino or sportsbook in minutes
+- **1000+ Games** — Slots, live casino, table games, crash games from top providers
+- **Crypto & Fiat** — Support for 50+ cryptocurrencies and traditional payment methods
+- **White Label** — Fully customizable branding, domains, and player experience
+- **Multi-tier Operator Model** — Company, retailer, and operator hierarchy for complex business structures
+- **Built-in VIP & CRM** — Player retention tools, VIP levels, deposit rewards, and automated campaigns
+- **Affiliate System** — Commission plans, tracking, postbacks, and referral programs
+- **Real-time Analytics** — Revenue, GGR/NGR, player retention, and game performance reports
+
+Learn more at [speedix.io](https://speedix.io)
+
+## What is Speedix MCP?
+
+This MCP server exposes **173 tools** that cover the full Speedix backoffice API, allowing AI assistants to:
+
+- Create and configure operators (online casino sites)
+- Manage games, providers, and categories
+- Handle player accounts, KYC, and responsible gambling
+- Configure payment methods and currencies
+- Set up VIP programs, deposit rewards, and promo campaigns
+- Run CRM campaigns with segmentation and workflows
+- Manage affiliates, commission plans, and referral programs
+- Generate financial reports and analytics
+- Configure notifications and alert channels
 
 ## Quick Start
 
