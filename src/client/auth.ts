@@ -2,10 +2,12 @@ import type { Config } from "../config.js";
 import { generateTotpCode } from "./totp.js";
 
 export interface OperatorContext {
-  operatorId: number;
-  companyOperatorId: number;
-  retailerOperatorId: number;
-  systemOperatorId: number;
+  operatorId: string;
+  companyOperatorId: string;
+  retailerOperatorId: string;
+  systemOperatorId: string;
+  realOperatorId: string;
+  operatorType: string;
 }
 
 export interface AuthState {
@@ -169,19 +171,11 @@ export class AuthManager {
       throw new Error("Invalid JWT token format");
     }
 
-    let payload: {
-      exp?: number;
-      userInfo?: {
-        operatorId?: number;
-        companyOperatorId?: number;
-        retailerOperatorId?: number;
-        systemOperatorId?: number;
-      };
-    };
+    const rawPayload = Buffer.from(parts[1], "base64").toString();
+
+    let payload: { exp?: number; userInfo?: { operatorType?: string } };
     try {
-      payload = JSON.parse(
-        Buffer.from(parts[1], "base64").toString()
-      );
+      payload = JSON.parse(rawPayload);
     } catch {
       throw new Error("Failed to decode JWT payload");
     }
@@ -190,12 +184,20 @@ export class AuthManager {
       throw new Error("JWT payload missing exp claim");
     }
 
-    const userInfo = payload.userInfo;
+    // Extract int64 IDs as strings via regex to avoid JS number precision loss
+    const extractId = (field: string): string => {
+      const match = rawPayload.match(new RegExp(`"${field}"\\s*:\\s*(\\d+)`));
+      return match ? match[1] : "0";
+    };
+
+    const operatorId = extractId("operatorId");
     const operatorContext: OperatorContext = {
-      operatorId: userInfo?.operatorId ?? 0,
-      companyOperatorId: userInfo?.companyOperatorId ?? 0,
-      retailerOperatorId: userInfo?.retailerOperatorId ?? 0,
-      systemOperatorId: userInfo?.systemOperatorId ?? 0,
+      operatorId,
+      companyOperatorId: extractId("companyOperatorId"),
+      retailerOperatorId: extractId("retailerOperatorId"),
+      systemOperatorId: extractId("systemOperatorId"),
+      realOperatorId: extractId("realOperatorId") !== "0" ? extractId("realOperatorId") : operatorId,
+      operatorType: payload.userInfo?.operatorType ?? "",
     };
 
     const expiresAt = payload.exp * 1000;

@@ -148,13 +148,15 @@ export class MeepoClient {
       throw new Error("Not authenticated. Cannot build operator context.");
     }
 
-    if (targetOperatorId && targetOperatorId !== current.operatorId) {
+    if (targetOperatorId && String(targetOperatorId) !== String(current.operatorId)) {
       // Targeting a sub-operator: use target's operator_id with current's hierarchy
       return {
-        operator_id: targetOperatorId,
+        operator_id: String(targetOperatorId),
         company_operator_id: current.companyOperatorId || current.operatorId,
         retailer_operator_id: current.retailerOperatorId,
         system_operator_id: current.systemOperatorId,
+        real_operator_id: String(targetOperatorId),
+        operator_type: "operator",
       };
     }
 
@@ -164,6 +166,8 @@ export class MeepoClient {
       company_operator_id: current.companyOperatorId,
       retailer_operator_id: current.retailerOperatorId,
       system_operator_id: current.systemOperatorId,
+      real_operator_id: current.realOperatorId || current.operatorId,
+      operator_type: current.operatorType,
     };
   }
 
