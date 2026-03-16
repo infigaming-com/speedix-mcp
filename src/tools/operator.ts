@@ -649,6 +649,9 @@ export function registerOperatorTools(
         const result = await client.request("operator/status/update", {
           ...params,
           operator_id: params.operator_id,
+          target_operator_context: client.buildTargetOperatorContext(
+            params.operator_id
+          ),
         });
         return {
           content: [
