@@ -620,7 +620,7 @@ export function registerOperatorTools(
     "update_operator_status",
     "Update an operator's status. Valid statuses: pending, live, suspended, request_to_close, closed, maintain.",
     {
-      operator_id: z.number().describe("Operator ID to update"),
+      operator_id: z.string().describe("Operator ID to update"),
       status: z
         .enum([
           "pending",
@@ -646,7 +646,10 @@ export function registerOperatorTools(
     },
     async (params) => {
       try {
-        const result = await client.request("operator/status/update", params);
+        const result = await client.request("operator/status/update", {
+          ...params,
+          operator_id: params.operator_id,
+        });
         return {
           content: [
             { type: "text", text: JSON.stringify(result, null, 2) },
