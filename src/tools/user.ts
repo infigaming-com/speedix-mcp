@@ -522,12 +522,22 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
   server.tool(
     "pre_launch_check",
     "Run pre-launch readiness check for the operator (validates configuration before going live).",
-    {},
-    async () => {
+    {
+      operator_id: z
+        .string()
+        .optional()
+        .describe("Operator ID to check. If omitted, checks the current operator."),
+    },
+    async ({ operator_id }) => {
       try {
+        const body: Record<string, unknown> = {};
+        if (operator_id) {
+          body.target_operator_context =
+            client.buildTargetOperatorContext(operator_id);
+        }
         const result = await client.request(
           "user/operator/prelaunch/check",
-          {}
+          body
         );
         return {
           content: [
