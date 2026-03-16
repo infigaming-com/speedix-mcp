@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { MeepoClient } from "../client/api.js";
 
 const operatorIdParam = z
-  .number()
+  .string()
   .optional()
   .describe(
     "Target operator ID. Omit to use the current operator. Provide a sub-operator ID when a parent account needs to manage a child operator's VIP config."
@@ -91,7 +91,7 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
       template: z
         .string()
         .describe("VIP level config template as JSON string"),
-      setting_id: z.number().describe("VIP setting ID to attach template to"),
+      setting_id: z.string().describe("VIP setting ID to attach template to"),
       operator_id: operatorIdParam,
     },
     async (params) => {
@@ -168,7 +168,7 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
     "delete_vip_level_template",
     "Delete a VIP level config template.",
     {
-      template_id: z.number().describe("Template ID to delete"),
+      template_id: z.string().describe("Template ID to delete"),
       operator_id: operatorIdParam,
     },
     async (params) => {
@@ -204,7 +204,7 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
     "adjust_user_vip_level",
     "Manually adjust a user's VIP level (admin operation).",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
       target_level: z.number().describe("Target VIP level"),
       issue_rewards: z
         .boolean()
@@ -242,7 +242,7 @@ export function registerVipTools(server: McpServer, client: MeepoClient) {
     "get_user_vip_level_options",
     "Get available VIP level options for a user (for admin manual adjustment).",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
     },
     async (params) => {
       try {

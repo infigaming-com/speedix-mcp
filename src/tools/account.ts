@@ -15,7 +15,7 @@ export function registerAccountTools(
       username: z.string().describe("Account username"),
       email: z.string().describe("Account email"),
       password: z.string().describe("Account password"),
-      role_id: z.number().describe("Role ID to assign"),
+      role_id: z.string().describe("Role ID to assign"),
       mobile: z.string().optional().describe("Mobile number"),
     },
     async (params) => {
@@ -44,8 +44,8 @@ export function registerAccountTools(
     "list_accounts",
     "List backoffice accounts with optional filters.",
     {
-      user_id: z.number().optional().describe("Filter by user ID"),
-      role_id: z.number().optional().describe("Filter by role ID"),
+      user_id: z.string().optional().describe("Filter by user ID"),
+      role_id: z.string().optional().describe("Filter by role ID"),
       enabled: z.boolean().optional().describe("Filter by enabled status"),
       email: z.string().optional().describe("Filter by email"),
       page: z.number().optional().describe("Page number"),
@@ -77,7 +77,7 @@ export function registerAccountTools(
     "get_account_detail",
     "Get detailed information about a backoffice account.",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
     },
     async (params) => {
       try {
@@ -105,9 +105,9 @@ export function registerAccountTools(
     "update_account",
     "Update a backoffice account (enable/disable, change role, lock/unlock).",
     {
-      user_id: z.number().describe("User ID to update"),
+      user_id: z.string().describe("User ID to update"),
       enabled: z.boolean().optional().describe("Enable/disable account"),
-      role_id: z.number().optional().describe("New role ID"),
+      role_id: z.string().optional().describe("New role ID"),
       username: z.string().optional().describe("New username"),
       email: z.string().optional().describe("New email"),
       mobile: z.string().optional().describe("New mobile"),
@@ -165,7 +165,7 @@ export function registerAccountTools(
     "admin_reset_password",
     "Admin: reset another user's password.",
     {
-      user_id: z.number().describe("Target user ID"),
+      user_id: z.string().describe("Target user ID"),
       new_password: z.string().describe("New password to set"),
     },
     async (params) => {
@@ -197,7 +197,7 @@ export function registerAccountTools(
     "admin_reset_2fa",
     "Admin: reset another user's 2FA binding.",
     {
-      target_user_id: z.number().describe("Target user ID"),
+      target_user_id: z.string().describe("Target user ID"),
     },
     async (params) => {
       try {
@@ -299,7 +299,7 @@ export function registerAccountTools(
     "update_role",
     "Update an existing access control role.",
     {
-      role_id: z.number().describe("Role ID to update"),
+      role_id: z.string().describe("Role ID to update"),
       name: z.string().describe("Updated role name"),
       permissions: z
         .string()
@@ -336,7 +336,7 @@ export function registerAccountTools(
     "delete_role",
     "Delete an access control role.",
     {
-      role_id: z.number().describe("Role ID to delete"),
+      role_id: z.string().describe("Role ID to delete"),
     },
     async (params) => {
       try {

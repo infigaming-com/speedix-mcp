@@ -99,7 +99,7 @@ export function registerNotificationTools(
     "get_notification_channel",
     "Get a specific notification channel by ID.",
     {
-      channel_id: z.number().describe("Channel ID"),
+      channel_id: z.string().describe("Channel ID"),
     },
     async (params) => {
       try {
@@ -130,7 +130,7 @@ export function registerNotificationTools(
     "update_notification_channel",
     "Update a notification channel.",
     {
-      channel_id: z.number().describe("Channel ID"),
+      channel_id: z.string().describe("Channel ID"),
       name: z.string().optional().describe("New display name"),
       config: z
         .string()
@@ -173,7 +173,7 @@ export function registerNotificationTools(
     "delete_notification_channel",
     "Delete a notification channel and its rules.",
     {
-      channel_id: z.number().describe("Channel ID to delete"),
+      channel_id: z.string().describe("Channel ID to delete"),
     },
     async (params) => {
       try {
@@ -204,7 +204,7 @@ export function registerNotificationTools(
     "test_notification_channel",
     "Test a notification channel by sending a test message.",
     {
-      channel_id: z.number().describe("Channel ID to test"),
+      channel_id: z.string().describe("Channel ID to test"),
       test_message: z
         .string()
         .optional()
@@ -241,7 +241,7 @@ export function registerNotificationTools(
     "save_notification_rules",
     "Save all rules for a notification channel (batch create/update/delete). Rules not included are deleted.",
     {
-      channel_id: z.number().describe("Channel ID"),
+      channel_id: z.string().describe("Channel ID"),
       rules: z
         .string()
         .describe(
@@ -278,7 +278,7 @@ export function registerNotificationTools(
     "list_notification_rules",
     "List notification rules with optional filters.",
     {
-      channel_id: z.number().optional().describe("Filter by channel ID"),
+      channel_id: z.string().optional().describe("Filter by channel ID"),
       message_type: z
         .number()
         .optional()

@@ -65,7 +65,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "update_crm_campaign",
     "Update an existing CRM campaign. Only provided fields are modified.",
     {
-      id: z.number().describe("Campaign ID"),
+      id: z.string().describe("Campaign ID"),
       name: z.string().optional().describe("New name"),
       description: z.string().optional().describe("New description"),
       start_at: z.string().optional().describe("New start time (ISO 8601)"),
@@ -110,7 +110,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "get_crm_campaign",
     "Get a specific CRM campaign by ID.",
     {
-      id: z.number().describe("Campaign ID"),
+      id: z.string().describe("Campaign ID"),
       include_workflow: z
         .boolean()
         .optional()
@@ -182,7 +182,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "delete_crm_campaign",
     "Delete a CRM campaign. Must be in DRAFT or ARCHIVED status.",
     {
-      id: z.number().describe("Campaign ID to delete"),
+      id: z.string().describe("Campaign ID to delete"),
     },
     async (params) => {
       try {
@@ -215,7 +215,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "set_crm_campaign_workflow",
     "Set or replace the workflow definition for a CRM campaign (YAML-based DAG).",
     {
-      campaign_id: z.number().describe("Campaign ID"),
+      campaign_id: z.string().describe("Campaign ID"),
       workflow_yaml: z
         .string()
         .describe("Workflow YAML definition (triggers, nodes, edges)"),
@@ -249,7 +249,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "get_crm_campaign_workflow",
     "Get the current workflow definition for a CRM campaign.",
     {
-      campaign_id: z.number().describe("Campaign ID"),
+      campaign_id: z.string().describe("Campaign ID"),
     },
     async (params) => {
       try {
@@ -342,7 +342,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "activate_crm_campaign",
     "Activate a DRAFT CRM campaign. Requires valid workflow.",
     {
-      id: z.number().describe("Campaign ID to activate"),
+      id: z.string().describe("Campaign ID to activate"),
     },
     async (params) => {
       try {
@@ -373,7 +373,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "pause_crm_campaign",
     "Pause an ACTIVE CRM campaign. In-flight executions continue.",
     {
-      id: z.number().describe("Campaign ID to pause"),
+      id: z.string().describe("Campaign ID to pause"),
     },
     async (params) => {
       try {
@@ -404,8 +404,8 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "trigger_crm_campaign",
     "Manually trigger a CRM campaign for specific users.",
     {
-      campaign_id: z.number().describe("Campaign ID to trigger"),
-      user_ids: z.array(z.number()).describe("User IDs to trigger for"),
+      campaign_id: z.string().describe("Campaign ID to trigger"),
+      user_ids: z.array(z.string()).describe("User IDs to trigger for"),
       campaign_data: z
         .string()
         .optional()
@@ -448,8 +448,8 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "list_crm_campaign_executions",
     "List CRM campaign execution records.",
     {
-      campaign_id: z.number().optional().describe("Filter by campaign ID"),
-      user_id: z.number().optional().describe("Filter by user ID"),
+      campaign_id: z.string().optional().describe("Filter by campaign ID"),
+      user_id: z.string().optional().describe("Filter by user ID"),
       status: z
         .string()
         .optional()
@@ -486,7 +486,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "get_crm_campaign_execution_steps",
     "Get step-by-step execution log for a specific campaign execution.",
     {
-      execution_id: z.number().describe("Execution ID"),
+      execution_id: z.string().describe("Execution ID"),
     },
     async (params) => {
       try {
@@ -573,7 +573,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "update_segment",
     "Update an existing segment. Only provided fields are modified.",
     {
-      id: z.number().describe("Segment ID"),
+      id: z.string().describe("Segment ID"),
       name: z.string().optional().describe("New name"),
       description: z.string().optional().describe("New description"),
       rules: z
@@ -616,7 +616,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "get_segment",
     "Get a specific segment by ID, including current user count.",
     {
-      id: z.number().describe("Segment ID"),
+      id: z.string().describe("Segment ID"),
     },
     async (params) => {
       try {
@@ -682,7 +682,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "delete_segment",
     "Delete a segment and all related data.",
     {
-      id: z.number().describe("Segment ID to delete"),
+      id: z.string().describe("Segment ID to delete"),
     },
     async (params) => {
       try {
@@ -713,7 +713,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "calculate_segment",
     "Manually trigger batch calculation for a segment (re-evaluate membership).",
     {
-      id: z.number().describe("Segment ID to calculate"),
+      id: z.string().describe("Segment ID to calculate"),
     },
     async (params) => {
       try {
@@ -744,7 +744,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "get_segment_users",
     "Get paginated list of users in a segment.",
     {
-      segment_id: z.number().describe("Segment ID"),
+      segment_id: z.string().describe("Segment ID"),
       only_current_members: z
         .boolean()
         .optional()
@@ -781,7 +781,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
     "get_user_segments",
     "Get all segments a specific user belongs to.",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
       only_current_memberships: z
         .boolean()
         .optional()

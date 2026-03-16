@@ -142,7 +142,7 @@ export class MeepoClient {
    * If targetOperatorId is provided, builds context for that operator.
    * Otherwise uses current operator's context from JWT.
    */
-  buildTargetOperatorContext(targetOperatorId?: number): Record<string, unknown> {
+  buildTargetOperatorContext(targetOperatorId?: string | number): Record<string, unknown> {
     const current = this.auth.getOperatorContext();
     if (!current) {
       throw new Error("Not authenticated. Cannot build operator context.");

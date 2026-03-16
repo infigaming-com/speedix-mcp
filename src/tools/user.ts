@@ -9,7 +9,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "list_users",
     "List platform users with optional filters (VIP, country, deposit, etc.).",
     {
-      user_id: z.number().optional().describe("Filter by user ID"),
+      user_id: z.string().optional().describe("Filter by user ID"),
       email: z.string().optional().describe("Filter by email"),
       mobile: z.string().optional().describe("Filter by mobile"),
       vip_level: z.string().optional().describe("Filter by VIP level"),
@@ -49,7 +49,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "get_user_overview",
     "Get user financial and gaming overview (balances, deposits, GGR, etc.).",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
       filter: z
         .string()
         .optional()
@@ -84,7 +84,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "get_user_profile",
     "Get user profile with registration info, login history, and tags.",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
       login_page: z.number().optional().describe("Login history page"),
       login_page_size: z
         .number()
@@ -120,7 +120,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "update_user",
     "Update a platform user (nickname, bans, KYC, contact info, etc.).",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
       nickname: z.string().optional().describe("New nickname"),
       ban_login: z.boolean().optional().describe("Ban/unban login"),
       ban_game: z.boolean().optional().describe("Ban/unban game access"),
@@ -160,7 +160,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "add_user_comment",
     "Add a comment/note to a user's profile.",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
       content: z.string().describe("Comment content"),
     },
     async (params) => {
@@ -192,7 +192,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "list_user_comments",
     "List comments/notes on a user's profile.",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
     },
     async (params) => {
       try {
@@ -225,7 +225,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "get_user_tags",
     "Get all active tags associated with a user.",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
     },
     async (params) => {
       try {
@@ -253,7 +253,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "set_user_tags",
     "Set tags for a user.",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
       tags: z.array(z.string()).describe("Tags to set"),
     },
     async (params) => {
@@ -313,7 +313,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "set_operator_tags",
     "Set tags for an operator (defines available tags for users).",
     {
-      operator_id: z.number().describe("Operator ID"),
+      operator_id: z.string().describe("Operator ID"),
       tags: z.array(z.string()).describe("Tags to set"),
     },
     async (params) => {
@@ -345,7 +345,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "get_operator_tags_config",
     "Get operator tags configuration (follow_parent flag).",
     {
-      operator_id: z.number().describe("Operator ID"),
+      operator_id: z.string().describe("Operator ID"),
     },
     async (params) => {
       try {
@@ -376,7 +376,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "set_operator_tags_config",
     "Set operator tags configuration (follow_parent flag).",
     {
-      operator_id: z.number().describe("Operator ID"),
+      operator_id: z.string().describe("Operator ID"),
       follow_parent: z
         .boolean()
         .describe("Whether to follow parent operator's tags"),
@@ -412,7 +412,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "list_user_session_activities",
     "List user session activities (login, game, payment events).",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
       event_type: z.string().optional().describe("Filter by event type"),
       start_time: z.string().optional().describe("Start time (ISO 8601)"),
       end_time: z.string().optional().describe("End time (ISO 8601)"),
@@ -450,7 +450,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "list_user_identities",
     "List user identity verification records (KYC submissions).",
     {
-      user_id: z.number().optional().describe("Filter by user ID"),
+      user_id: z.string().optional().describe("Filter by user ID"),
       status: z
         .string()
         .optional()
@@ -487,7 +487,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "audit_user_identity",
     "Approve or decline a user identity verification request.",
     {
-      id: z.number().describe("Identity record ID"),
+      id: z.string().describe("Identity record ID"),
       audit: z
         .string()
         .describe("Audit result: 'approved' or 'declined'"),
@@ -554,7 +554,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "get_user_responsible_gambling_config",
     "Get a user's responsible gambling configuration (self-exclusion, time limits, etc.).",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
     },
     async (params) => {
       try {
@@ -585,7 +585,7 @@ export function registerUserTools(server: McpServer, client: MeepoClient) {
     "delete_user_responsible_gambling_config",
     "Delete a user's responsible gambling configuration (admin override).",
     {
-      user_id: z.number().describe("User ID"),
+      user_id: z.string().describe("User ID"),
       limit_type: z
         .string()
         .describe("Limit type to delete: self_exclusion, break_in_play, time_limits"),

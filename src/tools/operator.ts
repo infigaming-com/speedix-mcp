@@ -501,7 +501,7 @@ export function registerOperatorTools(
     "List operators under a specific parent operator ID.",
     {
       parent_operator_id: z
-        .number()
+        .string()
         .describe("Parent operator ID"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),

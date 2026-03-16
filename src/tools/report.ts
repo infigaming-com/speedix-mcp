@@ -6,7 +6,7 @@ import type { MeepoClient } from "../client/api.js";
  * Build operator_context_filters from an operator_id.
  * Used by company/retailer accounts to query sub-operator data.
  */
-function buildOperatorContextFilters(operatorId: number) {
+function buildOperatorContextFilters(operatorId: string) {
   return {
     operator_contexts: [{ operator_id: operatorId }],
   };
@@ -21,7 +21,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       start_time: z.number().describe("Start timestamp (ms)"),
       end_time: z.number().describe("End timestamp (ms)"),
       currency: z.string().optional().describe("Filter by currency"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -60,7 +60,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       currency: z.string().optional().describe("Filter by currency"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -98,7 +98,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       end_time: z.number().describe("End timestamp (ms)"),
       currency: z.string().optional().describe("Filter by currency"),
       provider_id: z.string().optional().describe("Filter by provider"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -138,7 +138,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       provider_id: z.string().optional().describe("Filter by provider"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -175,7 +175,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       start_time: z.number().describe("Start timestamp (ms)"),
       end_time: z.number().describe("End timestamp (ms)"),
       currency: z.string().optional().describe("Filter by currency"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -217,7 +217,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       currency: z.string().optional().describe("Filter by currency"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -257,7 +257,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       start_time: z.number().describe("Start timestamp (ms)"),
       end_time: z.number().describe("End timestamp (ms)"),
       currency: z.string().optional().describe("Filter by currency"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -299,7 +299,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       currency: z.string().optional().describe("Filter by currency"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -340,7 +340,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       end_time: z.number().describe("End timestamp (ms)"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -379,10 +379,10 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     {
       start_time: z.number().describe("Start timestamp (ms)"),
       end_time: z.number().describe("End timestamp (ms)"),
-      user_id: z.number().optional().describe("Filter by user ID"),
+      user_id: z.string().optional().describe("Filter by user ID"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -419,8 +419,8 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     "get_customer_record",
     "Get detailed customer record report for a specific user.",
     {
-      user_id: z.number().describe("User ID"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      user_id: z.string().describe("User ID"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       try {
@@ -464,7 +464,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       end_time: z.number().describe("End timestamp (ms)"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       const { report_type, operator_id, ...rest } = params;
@@ -508,7 +508,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       end_time: z.number().describe("End timestamp (ms)"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
-      operator_id: z.number().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
+      operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
       const { report_type, operator_id, ...rest } = params;

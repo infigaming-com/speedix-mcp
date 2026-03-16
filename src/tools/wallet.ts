@@ -164,7 +164,7 @@ export function registerWalletTools(server: McpServer, client: MeepoClient) {
     "operator_transfer",
     "Transfer funds between operators. Only USD/USDT/USDC (1:1 exchange) are supported.",
     {
-      to_operator_id: z.number().describe("Target operator ID"),
+      to_operator_id: z.string().describe("Target operator ID"),
       currency: z.string().describe("Currency (USD, USDT, or USDC)"),
       amount: z.string().describe("Amount to transfer"),
     },
@@ -436,7 +436,7 @@ export function registerWalletTools(server: McpServer, client: MeepoClient) {
     "generate_promo_codes",
     "Generate promo codes for an existing campaign.",
     {
-      campaign_id: z.number().describe("Campaign ID to generate codes for"),
+      campaign_id: z.string().describe("Campaign ID to generate codes for"),
       quantity: z.number().describe("Number of codes to generate"),
       prefix: z.string().optional().describe("Code prefix (e.g. 'WELCOME')"),
     },

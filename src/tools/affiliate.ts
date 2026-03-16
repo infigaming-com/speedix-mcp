@@ -54,7 +54,7 @@ export function registerAffiliateTools(
     "update_commission_plan",
     "Update an existing affiliate commission plan.",
     {
-      commission_plan_id: z.number().describe("Commission plan ID"),
+      commission_plan_id: z.string().describe("Commission plan ID"),
       title: z.string().optional().describe("New title"),
       status: z.string().optional().describe("New status"),
       base_currency: z.string().optional().describe("New base currency"),
@@ -101,7 +101,7 @@ export function registerAffiliateTools(
     "get_commission_plan",
     "Get a specific commission plan by ID.",
     {
-      commission_plan_id: z.number().describe("Commission plan ID"),
+      commission_plan_id: z.string().describe("Commission plan ID"),
     },
     async (params) => {
       try {
@@ -133,7 +133,7 @@ export function registerAffiliateTools(
     "List commission plans with optional filters.",
     {
       status: z.string().optional().describe("Filter by status"),
-      affiliate_id: z.number().optional().describe("Filter by affiliate ID"),
+      affiliate_id: z.string().optional().describe("Filter by affiliate ID"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
     },
@@ -166,7 +166,7 @@ export function registerAffiliateTools(
     "delete_commission_plan",
     "Delete a commission plan.",
     {
-      commission_plan_id: z.number().describe("Commission plan ID to delete"),
+      commission_plan_id: z.string().describe("Commission plan ID to delete"),
     },
     async (params) => {
       try {
@@ -232,7 +232,7 @@ export function registerAffiliateTools(
     "update_affiliate",
     "Update an existing affiliate account.",
     {
-      affiliate_id: z.number().describe("Affiliate ID"),
+      affiliate_id: z.string().describe("Affiliate ID"),
       affiliate: z
         .string()
         .describe("Updated affiliate info as JSON string"),
@@ -300,7 +300,7 @@ export function registerAffiliateTools(
     "get_affiliate_details",
     "Get detailed information about a specific affiliate.",
     {
-      affiliate_id: z.number().describe("Affiliate ID"),
+      affiliate_id: z.string().describe("Affiliate ID"),
     },
     async (params) => {
       try {
@@ -331,7 +331,7 @@ export function registerAffiliateTools(
     "delete_affiliate",
     "Delete an affiliate account.",
     {
-      affiliate_id: z.number().describe("Affiliate ID to delete"),
+      affiliate_id: z.string().describe("Affiliate ID to delete"),
     },
     async (params) => {
       try {
@@ -371,7 +371,7 @@ export function registerAffiliateTools(
         .optional()
         .describe("Channel config as JSON string"),
       target_affiliate_id: z
-        .number()
+        .string()
         .optional()
         .describe("Target affiliate ID"),
     },
@@ -415,7 +415,7 @@ export function registerAffiliateTools(
     "List affiliate tracking campaigns.",
     {
       campaign_name: z.string().optional().describe("Filter by name"),
-      affiliate_id: z.number().optional().describe("Filter by affiliate ID"),
+      affiliate_id: z.string().optional().describe("Filter by affiliate ID"),
       enabled: z.boolean().optional().describe("Filter by enabled status"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
@@ -449,7 +449,7 @@ export function registerAffiliateTools(
     "update_affiliate_campaign",
     "Update an affiliate tracking campaign.",
     {
-      campaign_id: z.number().describe("Campaign ID"),
+      campaign_id: z.string().describe("Campaign ID"),
       enabled: z.boolean().optional().describe("Enable/disable"),
       campaign: z
         .string()
@@ -491,7 +491,7 @@ export function registerAffiliateTools(
     "delete_affiliate_campaign",
     "Delete an affiliate tracking campaign.",
     {
-      campaign_id: z.number().describe("Campaign ID to delete"),
+      campaign_id: z.string().describe("Campaign ID to delete"),
     },
     async (params) => {
       try {
@@ -524,7 +524,7 @@ export function registerAffiliateTools(
     "list_postbacks",
     "List affiliate postback configurations.",
     {
-      affiliate_id: z.number().optional().describe("Filter by affiliate ID"),
+      affiliate_id: z.string().optional().describe("Filter by affiliate ID"),
       status: z.string().optional().describe("Filter by status (active, inactive)"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
@@ -560,13 +560,13 @@ export function registerAffiliateTools(
     {
       postback_name: z.string().describe("Postback name"),
       status: z.string().describe("Status (active, inactive)"),
-      campaign_ids: z.array(z.number()).describe("Campaign IDs to trigger postback"),
+      campaign_ids: z.array(z.string()).describe("Campaign IDs to trigger postback"),
       action_type: z
         .string()
         .describe("Action type (register, deposit, first_deposit, withdrawal, game_start, game_bet)"),
       postback_url: z.string().describe("Postback URL"),
       request_method: z.string().describe("HTTP method (GET, POST)"),
-      target_affiliate_id: z.number().optional().describe("Target affiliate ID"),
+      target_affiliate_id: z.string().optional().describe("Target affiliate ID"),
     },
     async (params) => {
       try {
@@ -597,7 +597,7 @@ export function registerAffiliateTools(
     "list_postback_logs",
     "List postback execution logs.",
     {
-      affiliate_id: z.number().optional().describe("Filter by affiliate ID"),
+      affiliate_id: z.string().optional().describe("Filter by affiliate ID"),
       start_time: z.string().optional().describe("Start time (ISO 8601)"),
       end_time: z.string().optional().describe("End time (ISO 8601)"),
       page: z.number().optional().describe("Page number"),
@@ -672,7 +672,7 @@ export function registerAffiliateTools(
         .optional()
         .describe("Available to all affiliates"),
       affiliate_ids: z
-        .array(z.number())
+        .array(z.string())
         .optional()
         .describe("Specific affiliate IDs to grant access"),
     },
@@ -707,7 +707,7 @@ export function registerAffiliateTools(
     "list_affiliate_events",
     "List affiliate tracking events (registrations, deposits, bets, etc.).",
     {
-      affiliate_id: z.number().optional().describe("Filter by affiliate ID"),
+      affiliate_id: z.string().optional().describe("Filter by affiliate ID"),
       event_types: z
         .array(z.string())
         .optional()
@@ -746,7 +746,7 @@ export function registerAffiliateTools(
     "list_commissions",
     "List affiliate commission records.",
     {
-      affiliate_id: z.number().optional().describe("Filter by affiliate ID"),
+      affiliate_id: z.string().optional().describe("Filter by affiliate ID"),
       commission_subtypes: z
         .array(z.string())
         .optional()
@@ -791,7 +791,7 @@ export function registerAffiliateTools(
     "list_affiliate_users",
     "List users referred by affiliates.",
     {
-      affiliate_id: z.number().optional().describe("Filter by affiliate ID"),
+      affiliate_id: z.string().optional().describe("Filter by affiliate ID"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
     },
@@ -824,8 +824,8 @@ export function registerAffiliateTools(
     "list_affiliate_bills",
     "List affiliate billing records.",
     {
-      affiliate_id: z.number().optional().describe("Filter by affiliate ID"),
-      bill_id: z.number().optional().describe("Filter by bill ID"),
+      affiliate_id: z.string().optional().describe("Filter by affiliate ID"),
+      bill_id: z.string().optional().describe("Filter by bill ID"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
     },

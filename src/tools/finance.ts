@@ -40,7 +40,7 @@ export function registerFinanceTools(server: McpServer, client: MeepoClient) {
     "get_invoice_detail",
     "Get detailed information about a specific invoice.",
     {
-      invoice_id: z.number().describe("Invoice ID"),
+      invoice_id: z.string().describe("Invoice ID"),
     },
     async (params) => {
       try {

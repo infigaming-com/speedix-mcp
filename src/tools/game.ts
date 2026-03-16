@@ -253,7 +253,7 @@ export function registerGameTools(server: McpServer, client: MeepoClient) {
     "list_bets",
     "List game bet records with optional filters.",
     {
-      user_id: z.number().optional().describe("Filter by user ID"),
+      user_id: z.string().optional().describe("Filter by user ID"),
       provider_id: z.string().optional().describe("Filter by provider"),
       game_id: z.string().optional().describe("Filter by game"),
       start_time: z.number().optional().describe("Start timestamp (ms)"),
