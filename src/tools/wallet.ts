@@ -2,6 +2,13 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { MeepoClient } from "../client/api.js";
 
+const operatorIdParam = z
+  .string()
+  .optional()
+  .describe(
+    "Target operator ID. Omit to use the current operator. Provide a sub-operator ID when a parent account needs to manage a child operator's deposit reward config."
+  );
+
 export function registerWalletTools(server: McpServer, client: MeepoClient) {
   // List wallet currencies
   server.tool(
@@ -298,12 +305,24 @@ export function registerWalletTools(server: McpServer, client: MeepoClient) {
   server.tool(
     "get_deposit_reward_config",
     "Get the deposit reward (welcome bonus / daily bonus) configuration.",
-    {},
-    async () => {
+    {
+      operator_id: operatorIdParam,
+      currency: z
+        .string()
+        .optional()
+        .describe(
+          "Currency code for currency-specific deposit reward settings. Defaults to operator's reporting currency if not specified."
+        ),
+    },
+    async (params) => {
       try {
         const result = await client.request(
           "wallet/deposit-reward/config/get",
-          {}
+          {
+            currency: params.currency,
+            target_operator_context:
+              client.buildTargetOperatorContext(params.operator_id),
+          }
         );
         return {
           content: [
@@ -328,6 +347,11 @@ export function registerWalletTools(server: McpServer, client: MeepoClient) {
     "set_deposit_reward_sequences",
     "Set deposit reward sequences (welcome bonus tiers, daily bonus config).",
     {
+      operator_id: operatorIdParam,
+      currency: z
+        .string()
+        .optional()
+        .describe("Currency code for the deposit reward sequences."),
       config: z
         .string()
         .describe("Deposit reward config as JSON string"),
@@ -337,7 +361,12 @@ export function registerWalletTools(server: McpServer, client: MeepoClient) {
         const configObj = JSON.parse(params.config);
         const result = await client.request(
           "wallet/deposit-reward/sequences/set",
-          configObj
+          {
+            ...configObj,
+            currency: params.currency,
+            target_operator_context:
+              client.buildTargetOperatorContext(params.operator_id),
+          }
         );
         return {
           content: [
