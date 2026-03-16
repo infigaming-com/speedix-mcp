@@ -475,7 +475,7 @@ export function registerOperatorTools(
     },
     async (params) => {
       try {
-        const result = await client.request("operator/list/all", params);
+        const result = await client.request("operator/list/by-parent", params);
         return {
           content: [
             { type: "text", text: JSON.stringify(result, null, 2) },
@@ -645,9 +645,33 @@ export function registerOperatorTools(
         .describe("Action end timestamp (ms)"),
     },
     async (params) => {
+      // Map user-friendly status to backend action
+      const statusToAction: Record<string, string> = {
+        live: "launch",
+        suspended: "manual_suspend",
+        request_to_close: "manual_request",
+        closed: "approved",
+        maintain: "maintain",
+        pending: "pending",
+      };
+      const action = statusToAction[params.status];
+      if (!action) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Unknown status: ${params.status}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
       try {
+        const { status, ...rest } = params;
         const result = await client.request("operator/status/update", {
-          ...params,
+          ...rest,
+          action,
           operator_id: params.operator_id,
           target_operator_context: client.buildTargetOperatorContext(
             params.operator_id
