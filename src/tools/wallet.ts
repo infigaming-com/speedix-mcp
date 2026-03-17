@@ -387,6 +387,41 @@ export function registerWalletTools(server: McpServer, client: MeepoClient) {
     }
   );
 
+  // Wallet gamification config (per-currency bonus/withdrawal limits)
+  server.tool(
+    "get_wallet_gamification_config",
+    "Get wallet gamification configuration including per-currency bonus bet limits, cash withdrawal wagering requirements, bonus enabled status, and global wallet settings (deduction type, cash/bonus ratio, clear bonus on withdrawal).",
+    {
+      operator_id: operatorIdParam,
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "wallet/gamification/get",
+          {
+            target_operator_context:
+              client.buildTargetOperatorContext(params.operator_id),
+          }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to get wallet gamification config: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
   // Promo code management
   server.tool(
     "list_promo_campaigns",

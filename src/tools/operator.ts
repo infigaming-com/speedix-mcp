@@ -538,7 +538,7 @@ export function registerOperatorTools(
     },
     async (params) => {
       try {
-        const result = await client.request("operator/list/company", params);
+        const result = await client.request("operator/list/company", { ...params, include_count: true });
         return {
           content: [
             { type: "text", text: JSON.stringify(result, null, 2) },

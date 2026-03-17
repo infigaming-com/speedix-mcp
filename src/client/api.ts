@@ -189,6 +189,13 @@ export class MeepoClient {
     return this._reportingCurrency;
   }
 
+  /**
+   * Clear cached reporting currency (e.g. when switching accounts).
+   */
+  clearReportingCurrencyCache(): void {
+    this._reportingCurrency = null;
+  }
+
   get isConnected(): boolean {
     return this.auth.isAuthenticated();
   }

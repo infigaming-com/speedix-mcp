@@ -840,4 +840,592 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
       }
     }
   );
+
+  // ============ CRM Assets ============
+
+  server.tool(
+    "create_asset",
+    "Create a new CRM asset (email/push/sms/inbox template) with optional inline versions. Use type: EMAIL (1), SMS (2), PUSH (3), INBOX (4).",
+    {
+      name: z.string().describe("Asset display name"),
+      description: z.string().describe("Asset description"),
+      asset_key: z
+        .string()
+        .optional()
+        .describe("Unique key for programmatic lookup (e.g. 'welcome_email')"),
+      type: z
+        .string()
+        .describe(
+          "Asset type: 'EMAIL', 'SMS', 'PUSH', or 'INBOX'"
+        ),
+      metadata: z
+        .string()
+        .optional()
+        .describe(
+          "Type-specific config as JSON string. Email: {from_name, from_email, reply_to, track_opens, track_clicks}. Push: {icon, image, action_url, badge_count, sound}."
+        ),
+      versions: z
+        .string()
+        .optional()
+        .describe(
+          'Inline versions as JSON array. Each: {country, subject, content_url, preview_text?, content_type, is_required}. Use "global" as default country.'
+        ),
+    },
+    async (params) => {
+      try {
+        const typeMap: Record<string, number> = {
+          EMAIL: 1,
+          SMS: 2,
+          PUSH: 3,
+          INBOX: 4,
+        };
+        const payload: Record<string, unknown> = {
+          name: params.name,
+          description: params.description,
+          type: typeMap[params.type.toUpperCase()] ?? 0,
+        };
+        if (params.asset_key) payload.asset_key = params.asset_key;
+        if (params.metadata) payload.metadata = JSON.parse(params.metadata);
+        if (params.versions) payload.versions = JSON.parse(params.versions);
+        const result = await client.request("crm/asset/create", payload);
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to create asset: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "get_asset",
+    "Get a CRM asset by ID, including all its versions.",
+    {
+      id: z.string().describe("Asset ID"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request("crm/asset/get", {
+          id: params.id,
+        });
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to get asset: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "list_assets",
+    "List CRM assets with optional filtering by type and status.",
+    {
+      type: z
+        .string()
+        .optional()
+        .describe("Filter by type: EMAIL, SMS, PUSH, INBOX"),
+      status: z
+        .string()
+        .optional()
+        .describe("Filter by status: DRAFT, ACTIVE, ARCHIVED"),
+      include_inherited: z
+        .boolean()
+        .optional()
+        .describe("Include assets from parent operators"),
+      page: z.number().optional().describe("Page number"),
+      page_size: z.number().optional().describe("Page size"),
+    },
+    async (params) => {
+      try {
+        const typeMap: Record<string, number> = {
+          EMAIL: 1,
+          SMS: 2,
+          PUSH: 3,
+          INBOX: 4,
+        };
+        const statusMap: Record<string, number> = {
+          DRAFT: 1,
+          ACTIVE: 2,
+          ARCHIVED: 3,
+        };
+        const payload: Record<string, unknown> = {};
+        if (params.type) payload.type = typeMap[params.type.toUpperCase()];
+        if (params.status)
+          payload.status = statusMap[params.status.toUpperCase()];
+        if (params.include_inherited !== undefined)
+          payload.include_inherited = params.include_inherited;
+        if (params.page) payload.page = params.page;
+        if (params.page_size) payload.page_size = params.page_size;
+        const result = await client.request("crm/asset/list", payload);
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to list assets: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "update_asset",
+    "Update an existing CRM asset. Only provided fields are modified.",
+    {
+      id: z.string().describe("Asset ID"),
+      name: z.string().optional().describe("New name"),
+      description: z.string().optional().describe("New description"),
+      asset_key: z.string().optional().describe("New unique key"),
+      metadata: z.string().optional().describe("Updated metadata as JSON string"),
+      versions: z
+        .string()
+        .optional()
+        .describe("Inline versions to upsert as JSON array, matched by country code"),
+    },
+    async (params) => {
+      try {
+        const payload: Record<string, unknown> = { id: params.id };
+        if (params.name) payload.name = params.name;
+        if (params.description) payload.description = params.description;
+        if (params.asset_key) payload.asset_key = params.asset_key;
+        if (params.metadata) payload.metadata = JSON.parse(params.metadata);
+        if (params.versions) payload.versions = JSON.parse(params.versions);
+        const result = await client.request("crm/asset/update", payload);
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to update asset: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "delete_asset",
+    "Delete a CRM asset and all its versions. Must be DRAFT or ARCHIVED.",
+    {
+      id: z.string().describe("Asset ID to delete"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request("crm/asset/delete", {
+          id: params.id,
+        });
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to delete asset: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "update_asset_status",
+    "Transition a CRM asset's lifecycle status. Valid: DRAFT→ACTIVE, DRAFT→ARCHIVED, ACTIVE→ARCHIVED, ARCHIVED→DRAFT.",
+    {
+      id: z.string().describe("Asset ID"),
+      status: z
+        .string()
+        .describe("New status: DRAFT, ACTIVE, or ARCHIVED"),
+    },
+    async (params) => {
+      try {
+        const statusMap: Record<string, number> = {
+          DRAFT: 1,
+          ACTIVE: 2,
+          ARCHIVED: 3,
+        };
+        const result = await client.request("crm/asset/status", {
+          id: params.id,
+          status: statusMap[params.status.toUpperCase()] ?? 0,
+        });
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to update asset status: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // ============ Asset Content Upload ============
+
+  server.tool(
+    "upload_asset_content",
+    "Upload HTML/text content to R2 storage for use as asset template. Returns the content_url path to use in create_asset_version. " +
+      'The file is uploaded to the path: /static/{domain}/crm/{file_path}. Use domain "default" for system-level assets.',
+    {
+      content: z
+        .string()
+        .describe(
+          "Template content (HTML or plain text). Supports {{variable_name}} placeholders."
+        ),
+      file_path: z
+        .string()
+        .describe(
+          'Target file path in R2 (e.g. "email/welcome.html", "push/welcome.txt")'
+        ),
+      domain: z
+        .string()
+        .optional()
+        .describe(
+          'Target domain/subdomain. Use "default" for system-level templates. Defaults to "default".'
+        ),
+      content_type: z
+        .string()
+        .optional()
+        .describe(
+          'MIME type: "text/html" (default) or "text/plain"'
+        ),
+    },
+    async (params) => {
+      try {
+        const domain = params.domain || "default";
+        const contentType = params.content_type || "text/html";
+        // The backoffice API prepends "static/{domain}/" to the filePath,
+        // so we only need to send "crm/{file_path}" as the filePath.
+        const filePath = `crm/${params.file_path}`;
+        const fileName = params.file_path.split("/").pop() || "template.html";
+
+        await client.uploadFile(
+          filePath,
+          params.content,
+          contentType,
+          domain,
+          fileName
+        );
+
+        const contentUrl = `/static/${domain}/${filePath}`;
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                `Asset content uploaded successfully.\n\n` +
+                `**content_url:** \`${contentUrl}\`\n` +
+                `**domain:** ${domain}\n` +
+                `**content_type:** ${contentType}\n\n` +
+                `Use this content_url in create_asset_version.`,
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to upload asset content: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // ============ Asset Versions ============
+
+  server.tool(
+    "create_asset_version",
+    'Create a country-specific version for an existing asset. Use "global" as default fallback country.',
+    {
+      asset_id: z.string().describe("Parent asset ID"),
+      country: z
+        .string()
+        .describe('ISO country code (e.g. "US", "BR") or "global"'),
+      subject: z
+        .string()
+        .describe("Subject line (email subject / push title). Supports {{variable_name}} syntax."),
+      content_url: z
+        .string()
+        .describe("Path to template content in R2 storage"),
+      preview_text: z
+        .string()
+        .optional()
+        .describe("Preview text (email preheader / push subtitle)"),
+      content_type: z
+        .string()
+        .optional()
+        .describe('MIME type: "text/html" (default) or "text/plain"'),
+      is_required: z
+        .boolean()
+        .optional()
+        .describe("Must be ACTIVE before parent asset can be activated"),
+    },
+    async (params) => {
+      try {
+        const payload: Record<string, unknown> = {
+          asset_id: params.asset_id,
+          country: params.country,
+          subject: params.subject,
+          content_url: params.content_url,
+          content_type: params.content_type || "text/html",
+        };
+        if (params.preview_text) payload.preview_text = params.preview_text;
+        if (params.is_required !== undefined)
+          payload.is_required = params.is_required;
+        const result = await client.request(
+          "crm/asset/version/create",
+          payload
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to create asset version: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "list_asset_versions",
+    "List all versions belonging to a specific asset.",
+    {
+      asset_id: z.string().describe("Parent asset ID"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request("crm/asset/version/list", {
+          asset_id: params.asset_id,
+        });
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to list asset versions: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "update_asset_version_status",
+    "Transition an asset version's lifecycle status. Valid: DRAFT→ACTIVE, DRAFT→ARCHIVED, ACTIVE→ARCHIVED, ARCHIVED→DRAFT.",
+    {
+      id: z.string().describe("Asset version ID"),
+      status: z
+        .string()
+        .describe("New status: DRAFT, ACTIVE, or ARCHIVED"),
+    },
+    async (params) => {
+      try {
+        const statusMap: Record<string, number> = {
+          DRAFT: 1,
+          ACTIVE: 2,
+          ARCHIVED: 3,
+        };
+        const result = await client.request("crm/asset/version/status", {
+          id: params.id,
+          status: statusMap[params.status.toUpperCase()] ?? 0,
+        });
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to update asset version status: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // ============ Asset Variables & Rendering ============
+
+  server.tool(
+    "list_asset_variables",
+    "List all registered template variables for building asset content. Filter by asset type or source.",
+    {
+      asset_type: z
+        .string()
+        .optional()
+        .describe("Filter by type: EMAIL, SMS, PUSH, INBOX"),
+      source: z
+        .string()
+        .optional()
+        .describe("Filter by source: PLAYER, WALLET, CAMPAIGN, CUSTOM"),
+    },
+    async (params) => {
+      try {
+        const typeMap: Record<string, number> = {
+          EMAIL: 1,
+          SMS: 2,
+          PUSH: 3,
+          INBOX: 4,
+        };
+        const sourceMap: Record<string, number> = {
+          PLAYER: 1,
+          WALLET: 2,
+          CAMPAIGN: 3,
+          CUSTOM: 4,
+        };
+        const payload: Record<string, unknown> = {};
+        if (params.asset_type)
+          payload.asset_type = typeMap[params.asset_type.toUpperCase()];
+        if (params.source)
+          payload.source = sourceMap[params.source.toUpperCase()];
+        const result = await client.request("crm/asset/variables", payload);
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to list asset variables: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "render_asset",
+    "Render an asset version with provided data for preview. Resolves all {{variable_name}} placeholders.",
+    {
+      asset_id: z.string().describe("Asset ID to render"),
+      country: z
+        .string()
+        .describe('Country code for version selection, or "global"'),
+      player_data: z
+        .string()
+        .optional()
+        .describe("Player data as JSON string (e.g. username, email, vip_level)"),
+      wallet_data: z
+        .string()
+        .optional()
+        .describe("Wallet data as JSON string (e.g. balance, deposit_amount)"),
+      campaign_data: z
+        .string()
+        .optional()
+        .describe("Campaign data as JSON string (e.g. bonus_amount, promo_code)"),
+      custom_data: z
+        .string()
+        .optional()
+        .describe("Custom overrides as JSON string (e.g. brand_name, site_url)"),
+    },
+    async (params) => {
+      try {
+        const payload: Record<string, unknown> = {
+          asset_id: params.asset_id,
+          country: params.country,
+        };
+        if (params.player_data)
+          payload.player_data = JSON.parse(params.player_data);
+        if (params.wallet_data)
+          payload.wallet_data = JSON.parse(params.wallet_data);
+        if (params.campaign_data)
+          payload.campaign_data = JSON.parse(params.campaign_data);
+        if (params.custom_data)
+          payload.custom_data = JSON.parse(params.custom_data);
+        const result = await client.request("crm/asset/render", payload);
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to render asset: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
 }

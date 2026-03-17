@@ -6,7 +6,7 @@ export function registerAuthTools(server: McpServer, client: MeepoClient) {
   // Dynamic login
   server.tool(
     "login",
-    "Login to Meepo Backoffice with credentials. Use this to authenticate or switch operator context. If TOTP secret is provided, 2FA is handled automatically.",
+    "Login to Meepo Backoffice with credentials. Use this to authenticate or switch operator context. If TOTP secret is provided, 2FA is handled automatically. Supports multiple concurrent sessions via the label parameter.",
     {
       email: z.string().email().describe("Account email"),
       password: z.string().describe("Account password"),
@@ -21,6 +21,12 @@ export function registerAuthTools(server: McpServer, client: MeepoClient) {
         .describe(
           "TOTP secret (base32) for auto 2FA. If not provided and 2FA is required, use setup_2fa or complete_2fa_login."
         ),
+      label: z
+        .string()
+        .optional()
+        .describe(
+          "Session label for multi-account management (e.g. 'system', 'company'). Defaults to email. Use switch_account to switch between sessions."
+        ),
     },
     async (params) => {
       try {
@@ -28,15 +34,18 @@ export function registerAuthTools(server: McpServer, client: MeepoClient) {
           params.email,
           params.password,
           params.origin,
-          params.totp_secret
+          params.totp_secret,
+          params.label
         );
+
+        const sessionLabel = params.label || params.email;
 
         if (result.token) {
           return {
             content: [
               {
                 type: "text",
-                text: "Login successful. All API tools are now available.",
+                text: `Login successful (session: "${sessionLabel}"). All API tools are now available. Use switch_account to switch between sessions.`,
               },
             ],
           };
@@ -63,6 +72,75 @@ export function registerAuthTools(server: McpServer, client: MeepoClient) {
             {
               type: "text",
               text: `Login failed: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // List all sessions
+  server.tool(
+    "list_sessions",
+    "List all logged-in sessions. Shows label, email, origin, active status, and authentication status for each session.",
+    {},
+    async () => {
+      const sessions = client.auth.listSessions();
+      if (sessions.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "No sessions. Use the login tool to authenticate.",
+            },
+          ],
+        };
+      }
+
+      const lines = sessions.map(
+        (s) =>
+          `${s.active ? "→ " : "  "}[${s.label}] ${s.email} (${s.origin}) — ${s.authenticated ? "authenticated" : "expired/pending"}`
+      );
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Sessions (${sessions.length}):\n${lines.join("\n")}`,
+          },
+        ],
+      };
+    }
+  );
+
+  // Switch active session
+  server.tool(
+    "switch_account",
+    "Switch the active session to a different logged-in account. Use list_sessions to see available sessions.",
+    {
+      label: z
+        .string()
+        .describe("Session label to switch to (as shown in list_sessions)"),
+    },
+    async (params) => {
+      try {
+        const session = client.auth.switchSession(params.label);
+        // Clear cached reporting currency when switching
+        client.clearReportingCurrencyCache();
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Switched to session "${session.label}" (${session.email}). All API calls now use this account.`,
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Switch failed: ${(e as Error).message}`,
             },
           ],
           isError: true,

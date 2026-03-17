@@ -926,10 +926,21 @@ export function registerAffiliateTools(
     "Get referral plan configuration for a currency.",
     {
       currency: z.string().describe("Currency code"),
+      operator_id: z
+        .string()
+        .optional()
+        .describe(
+          "Target operator ID. Omit to use the current operator."
+        ),
     },
     async (params) => {
       try {
-        const result = await client.request("referral/plan/get", params);
+        const result = await client.request("referral/plan/get", {
+          currency: params.currency,
+          target_operator_context: client.buildTargetOperatorContext(
+            params.operator_id
+          ),
+        });
         return {
           content: [
             { type: "text", text: JSON.stringify(result, null, 2) },
@@ -954,6 +965,12 @@ export function registerAffiliateTools(
     "Set referral plan configuration for a currency.",
     {
       currency: z.string().describe("Currency code"),
+      operator_id: z
+        .string()
+        .optional()
+        .describe(
+          "Target operator ID. Omit to use the current operator."
+        ),
       enabled: z.boolean().optional().describe("Enable/disable referral plan"),
       follow_parent: z
         .boolean()
@@ -977,6 +994,9 @@ export function registerAffiliateTools(
       try {
         const payload: Record<string, unknown> = {
           currency: params.currency,
+          target_operator_context: client.buildTargetOperatorContext(
+            params.operator_id
+          ),
         };
         if (params.enabled !== undefined) payload.enabled = params.enabled;
         if (params.follow_parent !== undefined)
