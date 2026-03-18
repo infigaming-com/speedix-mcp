@@ -12,6 +12,43 @@ function buildOperatorContextFilters(operatorId: string) {
   };
 }
 
+/**
+ * Build a TimeRange object from ms timestamps.
+ * The backoffice report API expects { type, start_time, end_time } with ISO 8601 strings.
+ */
+function buildTimeRange(startMs: number, endMs: number) {
+  return {
+    type: "day",
+    start_time: new Date(startMs).toISOString(),
+    end_time: new Date(endMs).toISOString(),
+  };
+}
+
+/**
+ * Build the common report request body from params.
+ * Extracts start_time, end_time, operator_id and converts to the expected format.
+ */
+function buildReportBody(params: {
+  start_time: number;
+  end_time: number;
+  operator_id?: string;
+  currency?: string;
+  [key: string]: unknown;
+}) {
+  const { start_time, end_time, operator_id, currency, ...rest } = params;
+  const body: Record<string, unknown> = {
+    time_range: buildTimeRange(start_time, end_time),
+    ...rest,
+  };
+  if (operator_id) {
+    body.operator_context_filters = buildOperatorContextFilters(operator_id);
+  }
+  if (currency) {
+    body.currencies = [currency];
+  }
+  return body;
+}
+
 export function registerReportTools(server: McpServer, client: MeepoClient) {
   // Get summary report
   server.tool(
@@ -25,11 +62,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const body: Record<string, unknown> = { ...rest };
-        if (operator_id) {
-          body.operator_context_filters = buildOperatorContextFilters(operator_id);
-        }
+        const body = buildReportBody(params);
         const result = await client.request("report/summary/get", body);
         return {
           content: [
@@ -64,11 +97,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const body: Record<string, unknown> = { ...rest };
-        if (operator_id) {
-          body.operator_context_filters = buildOperatorContextFilters(operator_id);
-        }
+        const body = buildReportBody(params);
         const result = await client.request("report/summary/list", body);
         return {
           content: [
@@ -102,11 +131,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const body: Record<string, unknown> = { ...rest };
-        if (operator_id) {
-          body.operator_context_filters = buildOperatorContextFilters(operator_id);
-        }
+        const body = buildReportBody(params);
         const result = await client.request("report/game-data/get", body);
         return {
           content: [
@@ -142,11 +167,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const body: Record<string, unknown> = { ...rest };
-        if (operator_id) {
-          body.operator_context_filters = buildOperatorContextFilters(operator_id);
-        }
+        const body = buildReportBody(params);
         const result = await client.request("report/game-data/list", body);
         return {
           content: [
@@ -179,11 +200,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const body: Record<string, unknown> = { ...rest };
-        if (operator_id) {
-          body.operator_context_filters = buildOperatorContextFilters(operator_id);
-        }
+        const body = buildReportBody(params);
         const result = await client.request(
           "report/deposit-summaries/get",
           body
@@ -221,11 +238,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const body: Record<string, unknown> = { ...rest };
-        if (operator_id) {
-          body.operator_context_filters = buildOperatorContextFilters(operator_id);
-        }
+        const body = buildReportBody(params);
         const result = await client.request(
           "report/deposit-details/list",
           body
@@ -261,11 +274,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const body: Record<string, unknown> = { ...rest };
-        if (operator_id) {
-          body.operator_context_filters = buildOperatorContextFilters(operator_id);
-        }
+        const body = buildReportBody(params);
         const result = await client.request(
           "report/withdraw-summaries/get",
           body
@@ -303,11 +312,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const body: Record<string, unknown> = { ...rest };
-        if (operator_id) {
-          body.operator_context_filters = buildOperatorContextFilters(operator_id);
-        }
+        const body = buildReportBody(params);
         const result = await client.request(
           "report/withdraw-details/list",
           body
@@ -344,11 +349,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const body: Record<string, unknown> = { ...rest };
-        if (operator_id) {
-          body.operator_context_filters = buildOperatorContextFilters(operator_id);
-        }
+        const body = buildReportBody(params);
         const result = await client.request(
           "report/register-retention/list",
           body
@@ -386,11 +387,7 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
     },
     async (params) => {
       try {
-        const { operator_id, ...rest } = params;
-        const body: Record<string, unknown> = { ...rest };
-        if (operator_id) {
-          body.operator_context_filters = buildOperatorContextFilters(operator_id);
-        }
+        const body = buildReportBody(params);
         const result = await client.request(
           "report/player-game-data/list",
           body
@@ -467,11 +464,8 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
-      const { report_type, operator_id, ...rest } = params;
-      const body: Record<string, unknown> = { ...rest };
-      if (operator_id) {
-        body.operator_context_filters = buildOperatorContextFilters(operator_id);
-      }
+      const { report_type, ...rest } = params;
+      const body = buildReportBody(rest);
       try {
         const result = await client.request(
           `report/referral/${report_type}/list`,
@@ -511,11 +505,8 @@ export function registerReportTools(server: McpServer, client: MeepoClient) {
       operator_id: z.string().optional().describe("Target operator ID (for company/retailer accounts to query sub-operator data)"),
     },
     async (params) => {
-      const { report_type, operator_id, ...rest } = params;
-      const body: Record<string, unknown> = { ...rest };
-      if (operator_id) {
-        body.operator_context_filters = buildOperatorContextFilters(operator_id);
-      }
+      const { report_type, ...rest } = params;
+      const body = buildReportBody(rest);
       try {
         const result = await client.request(
           `report/affiliate/${report_type}/list`,
