@@ -51,12 +51,13 @@ export class MeepoClient {
     });
 
     if (!res.ok) {
+      const text = await res.text();
       let errorMsg: string;
       try {
-        const err = (await res.json()) as ApiError;
+        const err = JSON.parse(text) as ApiError;
         errorMsg = err.message || err.reason || `HTTP ${res.status}`;
       } catch {
-        errorMsg = await res.text();
+        errorMsg = text || `HTTP ${res.status}`;
       }
       throw new Error(`API error (${res.status}): ${errorMsg}`);
     }
@@ -124,12 +125,13 @@ export class MeepoClient {
     });
 
     if (!res.ok) {
+      const text = await res.text();
       let errorMsg: string;
       try {
-        const err = (await res.json()) as ApiError;
+        const err = JSON.parse(text) as ApiError;
         errorMsg = err.message || err.reason || `HTTP ${res.status}`;
       } catch {
-        errorMsg = await res.text();
+        errorMsg = text || `HTTP ${res.status}`;
       }
       throw new Error(`Upload error (${res.status}): ${errorMsg}`);
     }

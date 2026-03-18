@@ -19,8 +19,8 @@ function buildOperatorContextFilters(operatorId: string) {
 function buildTimeRange(startMs: number, endMs: number) {
   return {
     type: "day",
-    start_time: new Date(startMs).toISOString(),
-    end_time: new Date(endMs).toISOString(),
+    start_time: new Date(startMs).toISOString().slice(0, 10),
+    end_time: new Date(endMs).toISOString().slice(0, 10),
   };
 }
 
