@@ -68,18 +68,9 @@ export class MeepoClient {
       if (!body.target_operator_context && !body.operator_context_filters) {
         try {
           const ctx = this.buildTargetOperatorContext(this._targetOperatorId);
-          // Keep as string to avoid JS Number precision loss for large int64 IDs
-          const opId = this._targetOperatorId;
           finalBody = {
             ...body,
             target_operator_context: ctx,
-            operator_context_filters: {
-              operator_contexts: [{
-                operator_id: opId,
-                real_operator_id: opId,
-                operator_type: "operator",
-              }],
-            },
           };
         } catch {
           // Not authenticated yet, skip injection
