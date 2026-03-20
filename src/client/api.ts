@@ -45,24 +45,26 @@ export class MeepoClient {
     if (!this._targetOperatorId) return null;
 
     try {
-      // Try to find the operator in bottom operators list
+      // Fetch all operators to find the target's full context
       const result = await this.request<{ operators?: Array<Record<string, unknown>> }>(
-        "operator/list/bottom",
-        { page: 1, page_size: 100 },
+        "operator/list/all",
+        { page: 1, page_size: 500 },
         false
       );
       const ops = result.operators || [];
-      const target = ops.find(
-        (op: Record<string, unknown>) => String(op.operatorId) === this._targetOperatorId
-      );
+      const target = ops.find((op: Record<string, unknown>) => {
+        const ctx = op.operatorContext as Record<string, unknown> | undefined;
+        return ctx && String(ctx.operatorId) === this._targetOperatorId;
+      });
       if (target) {
+        const ctx = target.operatorContext as Record<string, unknown>;
         this._targetOperatorFullContext = {
-          operator_id: String(target.operatorId || this._targetOperatorId),
-          company_operator_id: String(target.companyOperatorId || "0"),
-          retailer_operator_id: String(target.retailerOperatorId || "0"),
-          system_operator_id: String(target.systemOperatorId || "0"),
-          real_operator_id: String(target.operatorId || this._targetOperatorId),
-          operator_type: "operator",
+          operator_id: String(ctx.operatorId || this._targetOperatorId),
+          company_operator_id: String(ctx.companyOperatorId || "0"),
+          retailer_operator_id: String(ctx.retailerOperatorId || "0"),
+          system_operator_id: String(ctx.systemOperatorId || "0"),
+          real_operator_id: String(ctx.realOperatorId || this._targetOperatorId),
+          operator_type: String(ctx.operatorType || "operator"),
         };
         return this._targetOperatorFullContext;
       }
