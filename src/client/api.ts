@@ -68,10 +68,34 @@ export class MeepoClient {
       if (!body.target_operator_context && !body.operator_context_filters) {
         try {
           const ctx = this.buildTargetOperatorContext(this._targetOperatorId);
-          finalBody = {
-            ...body,
-            target_operator_context: ctx,
-          };
+          // Report endpoints use operator_context_filters
+          // Other endpoints use target_operator_context
+          const isReportEndpoint = path.startsWith("report/") ||
+            path.startsWith("game/data") ||
+            path.includes("deposit/") ||
+            path.includes("withdrawal/") ||
+            path.includes("retention") ||
+            path.includes("customer/record") ||
+            path.includes("affiliate/report") ||
+            path.includes("referral/report");
+
+          if (isReportEndpoint) {
+            finalBody = {
+              ...body,
+              operator_context_filters: {
+                operator_contexts: [{
+                  operator_id: this._targetOperatorId,
+                  real_operator_id: this._targetOperatorId,
+                  operator_type: "operator",
+                }],
+              },
+            };
+          } else {
+            finalBody = {
+              ...body,
+              target_operator_context: ctx,
+            };
+          }
         } catch {
           // Not authenticated yet, skip injection
         }
