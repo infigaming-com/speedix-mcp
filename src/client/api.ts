@@ -68,7 +68,8 @@ export class MeepoClient {
       if (!body.target_operator_context && !body.operator_context_filters) {
         try {
           const ctx = this.buildTargetOperatorContext(this._targetOperatorId);
-          const opId = Number(this._targetOperatorId);
+          // Keep as string to avoid JS Number precision loss for large int64 IDs
+          const opId = this._targetOperatorId;
           finalBody = {
             ...body,
             target_operator_context: ctx,
