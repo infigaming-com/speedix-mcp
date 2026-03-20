@@ -11,10 +11,27 @@ export class MeepoClient {
   private config: Config;
   auth: AuthManager;
   private _reportingCurrency: string | null = null;
+  private _targetOperatorId: string | null = null;
 
   constructor(config: Config) {
     this.config = config;
     this.auth = new AuthManager(config);
+  }
+
+  /**
+   * Set a target operator ID. When set, all API requests will automatically
+   * include target_operator_context for this operator.
+   * Set to null to clear (use current operator).
+   */
+  setTargetOperator(operatorId: string | null): void {
+    this._targetOperatorId = operatorId;
+  }
+
+  /**
+   * Get the current target operator ID.
+   */
+  getTargetOperator(): string | null {
+    return this._targetOperatorId;
   }
 
   /**
@@ -44,10 +61,31 @@ export class MeepoClient {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
+    // Auto-inject target_operator_context if a target operator is set
+    // and the request body doesn't already have one
+    let finalBody = body;
+    if (this._targetOperatorId && !skipAuth) {
+      if (!body.target_operator_context && !body.operator_context_filters) {
+        try {
+          const ctx = this.buildTargetOperatorContext(this._targetOperatorId);
+          finalBody = {
+            ...body,
+            target_operator_context: ctx,
+            // Also add operator_context_filters for report endpoints
+            operator_context_filters: {
+              operator_contexts: [{ operator_id: this._targetOperatorId }],
+            },
+          };
+        } catch {
+          // Not authenticated yet, skip injection
+        }
+      }
+    }
+
     const res = await fetch(url, {
       method: "POST",
       headers,
-      body: JSON.stringify(body),
+      body: JSON.stringify(finalBody),
     });
 
     if (!res.ok) {

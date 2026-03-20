@@ -135,6 +135,65 @@ export function registerOperatorTools(
   server: McpServer,
   client: MeepoClient
 ) {
+  // ============ Target Operator Context ============
+
+  server.tool(
+    "set_target_operator",
+    "Set the target operator ID for all subsequent API calls. " +
+      "When set, all queries will return data for this specific operator. " +
+      "Use this when serving a specific merchant. Set to empty string or '0' to clear (use current account's operator).",
+    {
+      operator_id: z
+        .string()
+        .describe(
+          "The operator ID to target. All subsequent API calls will include this operator's context. " +
+            "Set to empty string to clear and return to current account's operator."
+        ),
+    },
+    async (params) => {
+      const opId = params.operator_id.trim();
+      if (!opId || opId === "0") {
+        client.setTargetOperator(null);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "Target operator cleared. Using current account's operator context.",
+            },
+          ],
+        };
+      }
+      client.setTargetOperator(opId);
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Target operator set to ${opId}. All subsequent API calls will target this operator.`,
+          },
+        ],
+      };
+    }
+  );
+
+  server.tool(
+    "get_target_operator",
+    "Get the currently set target operator ID. Returns null if no target is set (using current account's operator).",
+    {},
+    async () => {
+      const target = client.getTargetOperator();
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: target
+              ? `Current target operator: ${target}`
+              : "No target operator set. Using current account's operator context.",
+          },
+        ],
+      };
+    }
+  );
+
   // List available templates and color schemes
   server.tool(
     "list_operator_templates",
