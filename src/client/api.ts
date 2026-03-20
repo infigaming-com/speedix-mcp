@@ -12,6 +12,7 @@ export class MeepoClient {
   auth: AuthManager;
   private _reportingCurrency: string | null = null;
   private _targetOperatorId: string | null = null;
+  private _targetOperatorFullContext: Record<string, string> | null = null;
 
   constructor(config: Config) {
     this.config = config;
@@ -20,11 +21,12 @@ export class MeepoClient {
 
   /**
    * Set a target operator ID. When set, all API requests will automatically
-   * include target_operator_context for this operator.
+   * include the appropriate operator context.
    * Set to null to clear (use current operator).
    */
   setTargetOperator(operatorId: string | null): void {
     this._targetOperatorId = operatorId;
+    this._targetOperatorFullContext = null; // Clear cache, will be fetched on next request
   }
 
   /**
@@ -32,6 +34,52 @@ export class MeepoClient {
    */
   getTargetOperator(): string | null {
     return this._targetOperatorId;
+  }
+
+  /**
+   * Fetch and cache the full operator context (with company/retailer/system IDs)
+   * for the target operator. Needed for operator_context_filters.
+   */
+  private async _fetchTargetOperatorContext(): Promise<Record<string, string> | null> {
+    if (this._targetOperatorFullContext) return this._targetOperatorFullContext;
+    if (!this._targetOperatorId) return null;
+
+    try {
+      // Try to find the operator in bottom operators list
+      const result = await this.request<{ operators?: Array<Record<string, unknown>> }>(
+        "operator/list/bottom",
+        { page: 1, page_size: 100 },
+        false
+      );
+      const ops = result.operators || [];
+      const target = ops.find(
+        (op: Record<string, unknown>) => String(op.operatorId) === this._targetOperatorId
+      );
+      if (target) {
+        this._targetOperatorFullContext = {
+          operator_id: String(target.operatorId || this._targetOperatorId),
+          company_operator_id: String(target.companyOperatorId || "0"),
+          retailer_operator_id: String(target.retailerOperatorId || "0"),
+          system_operator_id: String(target.systemOperatorId || "0"),
+          real_operator_id: String(target.operatorId || this._targetOperatorId),
+          operator_type: "operator",
+        };
+        return this._targetOperatorFullContext;
+      }
+    } catch {
+      // Fallback: use basic context
+    }
+
+    // Fallback: just operator_id
+    this._targetOperatorFullContext = {
+      operator_id: this._targetOperatorId,
+      company_operator_id: "0",
+      retailer_operator_id: "0",
+      system_operator_id: "0",
+      real_operator_id: this._targetOperatorId,
+      operator_type: "operator",
+    };
+    return this._targetOperatorFullContext;
   }
 
   /**
@@ -61,40 +109,37 @@ export class MeepoClient {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    // Auto-inject target_operator_context if a target operator is set
-    // and the request body doesn't already have one
+    // Auto-inject operator context if a target operator is set
     let finalBody = body;
-    if (this._targetOperatorId && !skipAuth) {
+    if (this._targetOperatorId && !skipAuth && !path.startsWith("operator/list")) {
       if (!body.target_operator_context && !body.operator_context_filters) {
         try {
-          const ctx = this.buildTargetOperatorContext(this._targetOperatorId);
-          // Report endpoints use operator_context_filters
-          // Other endpoints use target_operator_context
-          const isReportEndpoint = path.startsWith("report/") ||
-            path.startsWith("game/data") ||
-            path.includes("deposit/") ||
-            path.includes("withdrawal/") ||
-            path.includes("retention") ||
-            path.includes("customer/record") ||
-            path.includes("affiliate/report") ||
-            path.includes("referral/report");
+          // Fetch full operator context (with company/retailer/system IDs)
+          const fullCtx = await this._fetchTargetOperatorContext();
+          if (fullCtx) {
+            // Report endpoints need operator_context_filters with full 4-tuple
+            const isReportEndpoint = path.startsWith("report/") ||
+              path.startsWith("game/data") ||
+              path.includes("deposit/") ||
+              path.includes("withdrawal/") ||
+              path.includes("retention") ||
+              path.includes("customer/record") ||
+              path.includes("affiliate/report") ||
+              path.includes("referral/report");
 
-          if (isReportEndpoint) {
-            finalBody = {
-              ...body,
-              operator_context_filters: {
-                operator_contexts: [{
-                  operator_id: this._targetOperatorId,
-                  real_operator_id: this._targetOperatorId,
-                  operator_type: "operator",
-                }],
-              },
-            };
-          } else {
-            finalBody = {
-              ...body,
-              target_operator_context: ctx,
-            };
+            if (isReportEndpoint) {
+              finalBody = {
+                ...body,
+                operator_context_filters: {
+                  operator_contexts: [fullCtx],
+                },
+              };
+            } else {
+              finalBody = {
+                ...body,
+                target_operator_context: fullCtx,
+              };
+            }
           }
         } catch {
           // Not authenticated yet, skip injection
