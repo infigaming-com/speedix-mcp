@@ -68,12 +68,16 @@ export class MeepoClient {
       if (!body.target_operator_context && !body.operator_context_filters) {
         try {
           const ctx = this.buildTargetOperatorContext(this._targetOperatorId);
+          const opId = Number(this._targetOperatorId);
           finalBody = {
             ...body,
             target_operator_context: ctx,
-            // Also add operator_context_filters for report endpoints
             operator_context_filters: {
-              operator_contexts: [{ operator_id: this._targetOperatorId }],
+              operator_contexts: [{
+                operator_id: opId,
+                real_operator_id: opId,
+                operator_type: "operator",
+              }],
             },
           };
         } catch {
