@@ -25,8 +25,8 @@ export function registerReviewTools(server: McpServer, client: MeepoClient) {
     async (params) => {
       try {
         const body: Record<string, unknown> = {};
-        if (params.ticket_id) body.ticket_id = Number(params.ticket_id);
-        if (params.user_id) body.user_id = Number(params.user_id);
+        if (params.ticket_id) body.ticket_id = params.ticket_id;
+        if (params.user_id) body.user_id = params.user_id;
         if (params.status) body.status = params.status;
         if (params.currency) body.currency = params.currency;
         if (params.start_time)
@@ -70,7 +70,7 @@ export function registerReviewTools(server: McpServer, client: MeepoClient) {
     async (params) => {
       try {
         const body: Record<string, unknown> = {
-          ticket_id: Number(params.ticket_id),
+          ticket_id: params.ticket_id,
           include_comments: params.include_comments ?? true,
         };
 
@@ -111,7 +111,7 @@ export function registerReviewTools(server: McpServer, client: MeepoClient) {
     async (params) => {
       try {
         const body: Record<string, unknown> = {
-          ticket_id: Number(params.ticket_id),
+          ticket_id: params.ticket_id,
           action: params.action,
         };
         if (params.review_comment)
@@ -150,7 +150,7 @@ export function registerReviewTools(server: McpServer, client: MeepoClient) {
     async (params) => {
       try {
         const result = await client.request("review/tickets/cancel", {
-          ticket_id: Number(params.ticket_id),
+          ticket_id: params.ticket_id,
         });
         return {
           content: [
