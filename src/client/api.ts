@@ -13,6 +13,7 @@ export class MeepoClient {
   private _reportingCurrency: string | null = null;
   private _targetOperatorId: string | null = null;
   private _targetOperatorFullContext: Record<string, string> | null = null;
+  private _internalCall = false;
 
   constructor(config: Config) {
     this.config = config;
@@ -45,12 +46,14 @@ export class MeepoClient {
     if (!this._targetOperatorId) return null;
 
     try {
-      // Fetch all operators to find the target's full context
+      // Fetch all operators to find the target's full context (internal call, bypass block)
+      this._internalCall = true;
       const result = await this.request<{ operators?: Array<Record<string, unknown>> }>(
         "operator/list/all",
         { page: 1, page_size: 500 },
         false
       );
+      this._internalCall = false;
       const ops = result.operators || [];
       const target = ops.find((op: Record<string, unknown>) => {
         const ctx = op.operatorContext as Record<string, unknown> | undefined;
@@ -69,6 +72,7 @@ export class MeepoClient {
         return this._targetOperatorFullContext;
       }
     } catch {
+      this._internalCall = false;
       // Fallback: use basic context
     }
 
@@ -109,6 +113,29 @@ export class MeepoClient {
     if (!skipAuth) {
       const token = await this.auth.getToken();
       headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    // When target operator is set, block APIs that could leak cross-tenant data
+    if (this._targetOperatorId && !skipAuth) {
+      const blockedPaths = [
+        "operator/list/all",
+        "operator/list/company",
+        "operator/list/bottom",
+        "operator/list/by-parent",
+        "company/register",
+        "operator/create",
+        "account/list",
+        "account/add",
+        "role/list",
+        "role/create",
+      ];
+      if (blockedPaths.some(p => path.startsWith(p))) {
+        if (!this._internalCall) {
+          throw new Error(
+            `Access denied: this operation is not available. You can only access data for your own operator.`
+          );
+        }
+      }
     }
 
     // Auto-inject operator context if a target operator is set
