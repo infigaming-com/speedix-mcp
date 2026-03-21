@@ -14,6 +14,7 @@ import { registerCrmTools } from "./tools/crm.js";
 import { registerAccountTools } from "./tools/account.js";
 import { registerNotificationTools } from "./tools/notification.js";
 import { registerUserTools } from "./tools/user.js";
+import { registerReviewTools } from "./tools/review.js";
 import { registerPrompts } from "./prompts/templates.js";
 
 export function createServer(config: Config): {
@@ -59,6 +60,7 @@ export function createServer(config: Config): {
   registerAccountTools(server, client);
   registerNotificationTools(server, client);
   registerUserTools(server, client);
+  registerReviewTools(server, client);
 
   // Register prompts
   registerPrompts(server);
