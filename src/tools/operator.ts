@@ -164,11 +164,27 @@ export function registerOperatorTools(
         };
       }
       client.setTargetOperator(opId);
+      // Trigger context fetch so we can return the full context to the caller
+      let contextInfo = "";
+      try {
+        const fullCtx = await (client as any)._fetchTargetOperatorContext();
+        if (fullCtx) {
+          contextInfo = `\n\nOperator context:\n` +
+            `  operatorId: ${fullCtx.operator_id}\n` +
+            `  companyOperatorId: ${fullCtx.company_operator_id}\n` +
+            `  retailerOperatorId: ${fullCtx.retailer_operator_id}\n` +
+            `  systemOperatorId: ${fullCtx.system_operator_id}\n` +
+            `  operatorType: ${fullCtx.operator_type}\n` +
+            `\nNote: For balance queries, use companyOperatorId (${fullCtx.company_operator_id}) with get_operator_balances.`;
+        }
+      } catch {
+        // Context fetch failed, continue without it
+      }
       return {
         content: [
           {
             type: "text" as const,
-            text: `Target operator set to ${opId}. All subsequent API calls will target this operator.`,
+            text: `Target operator set to ${opId}. All subsequent API calls will target this operator.${contextInfo}`,
           },
         ],
       };
