@@ -138,10 +138,14 @@ export class MeepoClient {
       }
     }
 
-    // Auto-inject operator context if a target operator is set
+    // Auto-inject or override operator context when target operator is set.
+    // This ensures ALL requests use the correct target operator context,
+    // even if individual tools pass their own (possibly wrong) context.
     let finalBody = body;
     if (this._targetOperatorId && !skipAuth && !path.startsWith("operator/list")) {
-      if (!body.target_operator_context && !body.operator_context_filters) {
+      // Always override — don't check !body.target_operator_context
+      // This prevents tools from accidentally using the wrong operator context
+      if (!body.operator_context_filters) {
         try {
           // Fetch full operator context (with company/retailer/system IDs)
           const fullCtx = await this._fetchTargetOperatorContext();
