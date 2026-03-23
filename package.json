@@ -11,6 +11,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
+    "start:http": "node dist/index-http.js",
     "lint": "tsc --noEmit"
   },
   "homepage": "https://speedix.io",
