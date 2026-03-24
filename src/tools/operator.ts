@@ -175,7 +175,7 @@ export function registerOperatorTools(
             `  retailerOperatorId: ${fullCtx.retailer_operator_id}\n` +
             `  systemOperatorId: ${fullCtx.system_operator_id}\n` +
             `  operatorType: ${fullCtx.operator_type}\n` +
-            `\nNote: For balance queries, use companyOperatorId (${fullCtx.company_operator_id}) with get_operator_balances.`;
+            `\nNote: Balance queries automatically use companyOperatorId (${fullCtx.company_operator_id}) — no manual override needed.`;
         }
       } catch {
         // Context fetch failed, continue without it

@@ -160,7 +160,18 @@ export class MeepoClient {
               path.includes("affiliate/report") ||
               path.includes("referral/report");
 
+            // Balance endpoints need company-level operator context
+            const isBalanceEndpoint = path.startsWith("wallet/operator/balance");
+
             if (isReportEndpoint) {
+              finalBody = {
+                ...body,
+                operator_context_filters: {
+                  operator_contexts: [fullCtx],
+                },
+              };
+            } else if (isBalanceEndpoint) {
+              // Balance API requires operator_context_filters (same as reports)
               finalBody = {
                 ...body,
                 operator_context_filters: {
