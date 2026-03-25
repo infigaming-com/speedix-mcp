@@ -431,6 +431,10 @@ export function registerWalletTools(server: McpServer, client: MeepoClient) {
         .string()
         .optional()
         .describe("Filter by status (active, paused, disabled)"),
+      code_type: z
+        .string()
+        .optional()
+        .describe("Filter by code type (one_time, universal)"),
       page: z.number().optional().describe("Page number"),
       page_size: z.number().optional().describe("Page size"),
     },
@@ -495,20 +499,32 @@ export function registerWalletTools(server: McpServer, client: MeepoClient) {
     }
   );
 
-  // Generate promo codes
+  // Generate one-time promo codes
   server.tool(
     "generate_promo_codes",
-    "Generate promo codes for an existing campaign.",
+    "Generate promo codes for a one_time campaign. For universal campaigns, use generate_universal_promo_codes instead.",
     {
       campaign_id: z.string().describe("Campaign ID to generate codes for"),
-      quantity: z.number().describe("Number of codes to generate"),
-      prefix: z.string().optional().describe("Code prefix (e.g. 'WELCOME')"),
+      count: z.number().describe("Number of codes to generate"),
+      code_length: z
+        .number()
+        .optional()
+        .describe("Length of generated codes"),
+      code_format: z
+        .string()
+        .optional()
+        .describe("Code format (e.g. alphanumeric)"),
     },
     async (params) => {
       try {
         const result = await client.request(
-          "wallet/promo-code/generate",
-          params
+          "wallet/promo-code/one-time/codes/generate",
+          {
+            campaignId: params.campaign_id,
+            count: params.count,
+            codeLength: params.code_length,
+            codeFormat: params.code_format,
+          }
         );
         return {
           content: [
@@ -521,6 +537,201 @@ export function registerWalletTools(server: McpServer, client: MeepoClient) {
             {
               type: "text",
               text: `Failed to generate promo codes: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Generate universal promo codes
+  server.tool(
+    "generate_universal_promo_codes",
+    "Generate codes for a universal campaign by providing custom code strings.",
+    {
+      campaign_id: z.string().describe("Campaign ID to generate codes for"),
+      codes: z
+        .array(z.string())
+        .describe("Array of custom code strings (e.g. ['WELCOME2026', 'VIP50'])"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "wallet/promo-code/universal/codes/generate",
+          {
+            campaignId: params.campaign_id,
+            codes: params.codes,
+          }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to generate universal promo codes: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Get promo campaign details (codes for one_time, usages for universal)
+  server.tool(
+    "get_promo_campaign_details",
+    "Get details of a promo campaign — lists generated codes (for one_time) or usages (for universal).",
+    {
+      campaign_id: z.string().describe("Campaign ID"),
+      user_id: z.string().optional().describe("Filter by user ID"),
+      status: z.string().optional().describe("Filter by code status"),
+      code: z.string().optional().describe("Filter by specific code"),
+      page: z.number().optional().describe("Page number"),
+      page_size: z.number().optional().describe("Page size"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "wallet/promo-code/campaign/details",
+          {
+            campaignId: params.campaign_id,
+            userId: params.user_id,
+            status: params.status,
+            code: params.code,
+            page: params.page,
+            pageSize: params.page_size,
+          }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to get campaign details: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Update promo campaign
+  server.tool(
+    "update_promo_campaign",
+    "Update an existing promo code campaign (cannot change status or code_type — use update_promo_campaign_status for status).",
+    {
+      campaign_id: z.string().describe("Campaign ID"),
+      config: z
+        .string()
+        .describe(
+          "Update fields as JSON string (name, maxUsageLimit, startTime, endTime, rewardConditions, rewardConfigs)"
+        ),
+    },
+    async (params) => {
+      try {
+        const configObj = JSON.parse(params.config);
+        const result = await client.request(
+          "wallet/promo-code/campaign/update",
+          {
+            campaignId: params.campaign_id,
+            ...configObj,
+          }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to update promo campaign: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Update promo campaign status
+  server.tool(
+    "update_promo_campaign_status",
+    "Update the status of a promo code campaign.",
+    {
+      campaign_id: z.string().describe("Campaign ID"),
+      status: z
+        .enum(["active", "paused", "disabled"])
+        .describe("New status"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "wallet/promo-code/campaign/status/update",
+          {
+            campaignId: params.campaign_id,
+            status: params.status,
+          }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to update campaign status: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // List universal code usages
+  server.tool(
+    "list_universal_code_usages",
+    "List the usages of a universal promo code campaign.",
+    {
+      campaign_id: z.string().describe("Campaign ID"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "wallet/promo-code/universal/usages/list",
+          {
+            campaignId: params.campaign_id,
+          }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to list universal code usages: ${(e as Error).message}`,
             },
           ],
           isError: true,
