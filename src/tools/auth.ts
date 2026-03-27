@@ -238,6 +238,53 @@ export function registerAuthTools(server: McpServer, client: MeepoClient) {
     }
   );
 
+  // Logout — clears in-memory sessions and notifies keeper to remove stored credentials
+  server.tool(
+    "logout",
+    "Log out and clear all authentication sessions. Notifies the session manager to remove stored credentials so the next login starts fresh.",
+    {},
+    async () => {
+      try {
+        // Clear in-memory AuthManager state
+        client.auth.clearAllSessions();
+
+        // Notify keeper to clear stored credentials via HTTP callback
+        const keeperUrl = process.env.KEEPER_API_URL;
+        const keeperKey = process.env.KEEPER_API_KEY;
+        const chatId    = process.env.KEEPER_CHAT_ID;
+
+        if (keeperUrl && chatId) {
+          const headers: Record<string, string> = {};
+          if (keeperKey) headers["X-API-Key"] = keeperKey;
+
+          const res = await fetch(`${keeperUrl}/chat/${chatId}/credentials`, {
+            method: "DELETE",
+            headers,
+          });
+
+          if (!res.ok) {
+            const body = await res.text();
+            return {
+              content: [{
+                type: "text" as const,
+                text: `Session cleared locally, but failed to sync with session manager (${res.status}): ${body}. Use /logout command to fully log out.`,
+              }],
+            };
+          }
+        }
+
+        return {
+          content: [{ type: "text" as const, text: "Logged out successfully. All sessions cleared." }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Logout failed: ${(e as Error).message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
   // Complete 2FA login (for users who already have 2FA bound)
   server.tool(
     "complete_2fa_login",

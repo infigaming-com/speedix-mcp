@@ -497,4 +497,14 @@ export class AuthManager {
   getActiveLabel(): string | null {
     return this.activeLabel;
   }
+
+  /**
+   * Clear all in-memory sessions and reset auth state.
+   * Called by the logout MCP tool.
+   */
+  clearAllSessions(): void {
+    this.sessions.clear();
+    this.activeLabel = null;
+    this.clearPending();
+  }
 }
