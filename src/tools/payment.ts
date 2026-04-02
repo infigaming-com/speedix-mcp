@@ -238,4 +238,147 @@ export function registerPaymentTools(server: McpServer, client: MeepoClient) {
       }
     }
   );
+
+  // List payment channels
+  server.tool(
+    "list_payment_channels",
+    "List payment channels (deposit/withdrawal) configured for the operator. Shows channel details including fees, limits, and status.",
+    {
+      type: z
+        .enum(["all", "deposit", "withdrawal"])
+        .optional()
+        .describe("Channel type filter (default: all)"),
+      currency: z.string().optional().describe("Filter by currency code"),
+      payment_method: z
+        .string()
+        .optional()
+        .describe("Filter by payment method"),
+      category: z.string().optional().describe("Filter by category"),
+      protocol: z.string().optional().describe("Filter by crypto protocol"),
+      network: z.string().optional().describe("Filter by crypto network"),
+      country: z.string().optional().describe("Filter by country"),
+      enable: z.boolean().optional().describe("Filter by enabled status"),
+      page: z.number().optional().describe("Page number"),
+      page_size: z.number().optional().describe("Page size"),
+    },
+    async (params) => {
+      try {
+        const typeMap: Record<string, string> = {
+          all: "CHANNEL_TYPE_ALL",
+          deposit: "CHANNEL_TYPE_DEPOSIT",
+          withdrawal: "CHANNEL_TYPE_WITHDRAW",
+        };
+
+        const payload: Record<string, unknown> = {};
+        if (params.type) payload.type = typeMap[params.type];
+        if (params.currency) payload.currency = params.currency;
+        if (params.payment_method)
+          payload.payment_method = params.payment_method;
+        if (params.category) payload.category = params.category;
+        if (params.protocol) payload.protocol = params.protocol;
+        if (params.network) payload.network = params.network;
+        if (params.country) payload.country = params.country;
+        if (params.enable !== undefined) payload.enable = params.enable;
+        if (params.page) payload.page = params.page;
+        if (params.page_size) payload.page_size = params.page_size;
+
+        const result = await client.request(
+          "payment/channel/page",
+          payload
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to list payment channels: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Create payment channel
+  server.tool(
+    "create_payment_channel",
+    "Create a new payment channel for the operator.",
+    {
+      config: z
+        .string()
+        .describe(
+          "Payment channel config as JSON string (merchant_id, payment_method_id, contact, fixed_fee, fee_rate, min_fee, user_fixed_fee, user_fee_rate, user_min_fee, min_amount, max_amount, key, remark, sort_order)"
+        ),
+    },
+    async (params) => {
+      try {
+        const configObj = JSON.parse(params.config);
+        const result = await client.request(
+          "payment/channel/create",
+          configObj
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to create payment channel: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Update payment channel
+  server.tool(
+    "update_payment_channel",
+    "Update an existing payment channel's configuration (fees, limits, status).",
+    {
+      payment_channel_id: z
+        .string()
+        .describe("The payment channel ID to update"),
+      config: z
+        .string()
+        .describe(
+          "Update fields as JSON string (fixed_fee, fee_rate, min_fee, user_fixed_fee, user_fee_rate, user_min_fee, min_amount, max_amount, enable, key, remark, sort_order)"
+        ),
+    },
+    async (params) => {
+      try {
+        const configObj = JSON.parse(params.config);
+        const result = await client.request("payment/channel/update", {
+          payment_channel_id: params.payment_channel_id,
+          ...configObj,
+        });
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to update payment channel: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
 }
