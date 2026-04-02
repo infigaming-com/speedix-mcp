@@ -10,7 +10,7 @@ export function registerPaymentTools(server: McpServer, client: MeepoClient) {
     {},
     async () => {
       try {
-        const result = await client.request("payment/methods/list", {});
+        const result = await client.request("payment/method/list", {});
         return {
           content: [
             { type: "text", text: JSON.stringify(result, null, 2) },
@@ -38,7 +38,7 @@ export function registerPaymentTools(server: McpServer, client: MeepoClient) {
     async () => {
       try {
         const result = await client.request(
-          "payment/supported-methods/list",
+          "payment/supportedmethod/list",
           {}
         );
         return {
