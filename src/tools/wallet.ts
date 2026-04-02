@@ -798,4 +798,78 @@ export function registerWalletTools(server: McpServer, client: MeepoClient) {
       }
     }
   );
+
+  // List wallet balance transactions for a user
+  server.tool(
+    "list_wallet_balance_transactions",
+    "List wallet balance transactions (credits/debits) for a specific user. This is the data shown on the user's Transaction page in backoffice. Supports filtering by transaction type, currency, time range, and specific transaction IDs.",
+    {
+      user_id: z.string().describe("User ID to query transactions for"),
+      transaction_types: z
+        .array(z.string())
+        .optional()
+        .describe(
+          "Filter by transaction types. Values: payment_deposit, game_win, payment_withdraw, game_bet, payment_withdraw_freeze, payment_withdraw_settle, game_bet_rollback, game_win_rollback, payment_withdraw_rollback, deposit_reward, promo_code_reward, free_spin_win, free_bet_win, bonus_to_cash_transfer, manual_credit, manual_debit, app_download_reward"
+        ),
+      currency: z.string().optional().describe("Filter by currency code"),
+      start_time: z
+        .string()
+        .optional()
+        .describe("Start time (ISO 8601 format, e.g. 2026-04-01T00:00:00Z)"),
+      end_time: z
+        .string()
+        .optional()
+        .describe("End time (ISO 8601 format, e.g. 2026-04-02T00:00:00Z)"),
+      source_credit_id: z
+        .string()
+        .optional()
+        .describe(
+          "Filter by source credit ID to find balance transactions that created this credit"
+        ),
+      balance_transaction_ids: z
+        .array(z.string())
+        .optional()
+        .describe("Filter by specific balance transaction IDs"),
+      page: z.number().optional().describe("Page number"),
+      page_size: z.number().optional().describe("Page size"),
+    },
+    async (params) => {
+      try {
+        const payload: Record<string, unknown> = {
+          user_id: params.user_id,
+        };
+        if (params.transaction_types)
+          payload.transaction_types = params.transaction_types;
+        if (params.currency) payload.currency = params.currency;
+        if (params.start_time) payload.start_time = params.start_time;
+        if (params.end_time) payload.end_time = params.end_time;
+        if (params.source_credit_id)
+          payload.source_credit_id = params.source_credit_id;
+        if (params.balance_transaction_ids)
+          payload.balance_transaction_ids = params.balance_transaction_ids;
+        if (params.page) payload.page = params.page;
+        if (params.page_size) payload.page_size = params.page_size;
+
+        const result = await client.request(
+          "wallet/balance-transactions/list",
+          payload
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to list wallet balance transactions: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
 }
