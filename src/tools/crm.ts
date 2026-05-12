@@ -1436,7 +1436,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
 
   server.tool(
     "get_crm_campaign_subscription",
-    "Get the current operator's subscription state for a system-owned CRM campaign. Returns enabled=false when no row exists (opt-in default).",
+    "Get an operator's subscription state for a system-owned CRM campaign. By default reads the current session's operator; when `set_target_operator` is set, reads that operator's row on behalf (system-admin use case). Returns enabled=false when no row exists (opt-in default).",
     {
       campaign_id: z.string().describe("Campaign ID (must be system-owned)"),
     },
@@ -1467,7 +1467,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
 
   server.tool(
     "set_crm_campaign_subscription",
-    "Toggle the current operator's subscription on/off for a system-owned CRM campaign. The default is OFF — call this with enabled=true to opt in.",
+    "Toggle an operator's subscription on/off for a system-owned CRM campaign. By default writes the current session's operator row; when `set_target_operator` is set, writes on behalf of that operator (system-admin use case). The default is OFF — call this with enabled=true to opt in.",
     {
       campaign_id: z.string().describe("Campaign ID (must be system-owned)"),
       enabled: z.boolean().describe("New enabled state"),
@@ -1499,12 +1499,18 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
 
   server.tool(
     "list_crm_campaign_subscriptions",
-    "List campaign subscriptions filtered by campaign and/or enabled state. System admins use this to see which operators have opted in to a campaign; operators use it to see which inherited campaigns they have enabled.",
+    "List campaign subscriptions filtered by campaign, operator, and/or enabled state. CRM rejects empty filters — at least one of `campaign_id` or `target_operator_id` is required. System admins use this to see adoption across operators for a campaign; operators use it to see which inherited campaigns they have enabled.",
     {
       campaign_id: z
         .string()
         .optional()
         .describe("Filter to a specific campaign ID"),
+      target_operator_id: z
+        .string()
+        .optional()
+        .describe(
+          "Filter to a specific operator's rows. System admin omits this and sets campaign_id only to see all operators' adoption."
+        ),
       enabled: z
         .boolean()
         .optional()
@@ -1516,6 +1522,8 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
       try {
         const payload: Record<string, unknown> = {};
         if (params.campaign_id) payload.campaign_id = params.campaign_id;
+        if (params.target_operator_id)
+          payload.target_operator_id = params.target_operator_id;
         if (params.enabled !== undefined) payload.enabled = params.enabled;
         if (params.page !== undefined) payload.page = params.page;
         if (params.page_size !== undefined) payload.page_size = params.page_size;
@@ -1544,7 +1552,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
 
   server.tool(
     "bulk_set_crm_campaign_subscription",
-    "System-admin tool: flip a system-owned campaign on (or off) for many operators in one call. Operators not in the caller's hierarchy are surfaced in rejected_operator_ids without aborting the rest. Use this to seed 'default ON for these N operators' at publish time.",
+    "System-admin tool: flip a system-owned campaign on (or off) for many operators in one call. Operators not in the caller's hierarchy are surfaced in rejected_operator_ids without aborting the rest. Targets are addressed by target_operator_ids — any `set_target_operator` value in the session is ignored. Use this to seed 'default ON for these N operators' at publish time.",
     {
       campaign_id: z.string().describe("Campaign ID (must be system-owned)"),
       target_operator_ids: z
@@ -1588,7 +1596,7 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
 
   server.tool(
     "fork_crm_campaign",
-    "Fork a system-owned campaign into an editable operator-owned copy. Caller must be operator-level (target_operator_id set in session). Fork starts in DRAFT; original asset references are preserved (no asset deep-copy). Response.original_subscription_was_enabled signals whether the operator should disable their subscription on the original to avoid double-firing once the fork is activated.",
+    "Fork a system-owned campaign into an editable operator-owned copy. Caller must be operator-level (target_operator_id set in session). Fork starts in DRAFT; original asset references are preserved (no asset deep-copy). If response.original_subscription_was_enabled is true, follow up with `set_crm_campaign_subscription` (campaign_id=original_id, enabled=false) to disable the original subscription and avoid double-firing once the fork is activated.",
     {
       campaign_id: z
         .string()
