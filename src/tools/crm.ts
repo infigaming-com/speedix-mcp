@@ -1428,4 +1428,202 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
       }
     }
   );
+
+  // ============ Campaign Subscription ============
+  // Controls whether a system-owned campaign fires for an operator's users.
+  // Absent row = OFF (opt-in default). Operators toggle their own row via
+  // Get/Set; system admins use List + BulkSet to inspect/seed adoption.
+
+  server.tool(
+    "get_crm_campaign_subscription",
+    "Get an operator's subscription state for a system-owned CRM campaign. By default reads the current session's operator; when `set_target_operator` is set, reads that operator's row on behalf (system-admin use case). Returns enabled=false when no row exists (opt-in default).",
+    {
+      campaign_id: z.string().describe("Campaign ID (must be system-owned)"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "crm/campaign/subscription/get",
+          { campaign_id: params.campaign_id }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to get campaign subscription: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "set_crm_campaign_subscription",
+    "Toggle an operator's subscription on/off for a system-owned CRM campaign. By default writes the current session's operator row; when `set_target_operator` is set, writes on behalf of that operator (system-admin use case). The default is OFF — call this with enabled=true to opt in.",
+    {
+      campaign_id: z.string().describe("Campaign ID (must be system-owned)"),
+      enabled: z.boolean().describe("New enabled state"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "crm/campaign/subscription/set",
+          { campaign_id: params.campaign_id, enabled: params.enabled }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to set campaign subscription: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "list_crm_campaign_subscriptions",
+    "List campaign subscriptions filtered by campaign, operator, and/or enabled state. CRM rejects empty filters — at least one of `campaign_id` or `target_operator_id` is required. System admins use this to see adoption across operators for a campaign; operators use it to see which inherited campaigns they have enabled.",
+    {
+      campaign_id: z
+        .string()
+        .optional()
+        .describe("Filter to a specific campaign ID"),
+      target_operator_id: z
+        .string()
+        .optional()
+        .describe(
+          "Filter to a specific operator's rows. System admin omits this and sets campaign_id only to see all operators' adoption."
+        ),
+      enabled: z
+        .boolean()
+        .optional()
+        .describe("Filter to rows where enabled = this value"),
+      page: z.number().optional().describe("Page number"),
+      page_size: z.number().optional().describe("Page size"),
+    },
+    async (params) => {
+      try {
+        const payload: Record<string, unknown> = {};
+        if (params.campaign_id) payload.campaign_id = params.campaign_id;
+        if (params.target_operator_id)
+          payload.target_operator_id = params.target_operator_id;
+        if (params.enabled !== undefined) payload.enabled = params.enabled;
+        if (params.page !== undefined) payload.page = params.page;
+        if (params.page_size !== undefined) payload.page_size = params.page_size;
+        const result = await client.request(
+          "crm/campaign/subscription/list",
+          payload
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to list campaign subscriptions: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "bulk_set_crm_campaign_subscription",
+    "System-admin tool: flip a system-owned campaign on (or off) for many operators in one call. Operators not in the caller's hierarchy are surfaced in rejected_operator_ids without aborting the rest. Targets are addressed by target_operator_ids — any `set_target_operator` value in the session is ignored. Use this to seed 'default ON for these N operators' at publish time.",
+    {
+      campaign_id: z.string().describe("Campaign ID (must be system-owned)"),
+      target_operator_ids: z
+        .array(z.string())
+        .describe("Operator IDs to flip"),
+      enabled: z.boolean().describe("New enabled state to apply"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "crm/campaign/subscription/bulk_set",
+          {
+            campaign_id: params.campaign_id,
+            target_operator_ids: params.target_operator_ids,
+            enabled: params.enabled,
+          }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to bulk set campaign subscriptions: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // ============ Campaign Fork ============
+  // Fork a system-owned campaign into an operator-owned copy. The fork is
+  // independent: system edits to the original don't propagate, and it starts
+  // in DRAFT for the operator to customize before activating.
+
+  server.tool(
+    "fork_crm_campaign",
+    "Fork a system-owned campaign into an editable operator-owned copy. Caller must be operator-level (target_operator_id set in session). Fork starts in DRAFT; original asset references are preserved (no asset deep-copy). If response.original_subscription_was_enabled is true, follow up with `set_crm_campaign_subscription` (campaign_id=original_id, enabled=false) to disable the original subscription and avoid double-firing once the fork is activated.",
+    {
+      campaign_id: z
+        .string()
+        .describe("ID of the system-owned campaign to fork"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "crm/campaign/fork",
+          { campaign_id: params.campaign_id }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to fork CRM campaign: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
 }
