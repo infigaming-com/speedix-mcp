@@ -1466,4 +1466,139 @@ export function registerCrmTools(server: McpServer, client: MeepoClient) {
       }
     }
   );
+
+  // ============ Operator-managed variable values (PR6) ============
+  // Per-operator values for variables registered with source=OPERATOR_MANAGED.
+  // Operators set these via the BO settings UI; system admins can set on
+  // behalf of an operator via set_target_operator. Missing row = "not set"
+  // (render fails for that operator's users). Empty value="" is a
+  // deliberate "render as empty" — UI MUST NOT translate cleared input
+  // into Set("").
+
+  server.tool(
+    "get_crm_operator_variable_value",
+    "Get the operator's value for a single OPERATOR_MANAGED CRM asset variable. By default reads the current session's operator; when `set_target_operator` is set, reads that operator's row on behalf (system-admin use case). Returns value=null when not configured.",
+    {
+      variable_name: z
+        .string()
+        .describe("Variable name (e.g. 'support_email', 'bonus_amount')"),
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "crm/asset/variable/value/get",
+          { variable_name: params.variable_name }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to get operator variable value: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "set_crm_operator_variable_value",
+    "Upsert the operator's value for a single OPERATOR_MANAGED CRM asset variable. The variable must be registered with source=OPERATOR_MANAGED in this operator's system tenant. Empty `value` writes a deliberate empty-string row — DO NOT use this to clear; once set there is no v1 RPC to remove the row.",
+    {
+      variable_name: z.string().describe("Variable name"),
+      value: z
+        .string()
+        .describe(
+          "New value. Empty string is explicit 'render as empty' (NOT a clear/unset)."
+        ),
+    },
+    async (params) => {
+      try {
+        const result = await client.request(
+          "crm/asset/variable/value/set",
+          { variable_name: params.variable_name, value: params.value }
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to set operator variable value: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "list_crm_operator_variable_values",
+    "List every value the operator has set for OPERATOR_MANAGED CRM asset variables. Use list_crm_required_operator_variables to find the ones still missing.",
+    {},
+    async () => {
+      try {
+        const result = await client.request(
+          "crm/asset/variable/value/list",
+          {}
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to list operator variable values: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "list_crm_required_operator_variables",
+    "List the OPERATOR_MANAGED CRM asset variables the operator has NOT yet set. Operator must fill these before any asset referencing them can render for their users. v1 does NOT support the for_campaign_id narrowing filter — calls with non-zero return UNIMPLEMENTED.",
+    {},
+    async () => {
+      try {
+        const result = await client.request(
+          "crm/asset/variable/required/list",
+          {}
+        );
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(result, null, 2) },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to list required operator variables: ${(e as Error).message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
 }
